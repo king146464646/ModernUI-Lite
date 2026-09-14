@@ -2,14 +2,15 @@
 [![CurseForge](http://cf.way2muchnoise.eu/full_352491_downloads.svg)](https://www.curseforge.com/minecraft/mc-mods/modern-ui)
 [![CurseForge](http://cf.way2muchnoise.eu/versions/For%20Minecraft_352491_all.svg)](https://www.curseforge.com/minecraft/mc-mods/modern-ui)
 ### This project removed features are as follows:
-1.Home tab
-2.OptiFine Zoom
-3.GUI Scale
-4.Window Mode
-5.Inventory Pause
-6.Play Music
-7.Master Volume Multiplier
-8.Game load notification sound
+* Home tab
+* OptiFine Zoom
+* GUI Scale
+* Window Mode
+* Inventory Pause
+* Play Music
+* Master Volume Multiplier
+* Game load notification sound
+
 If you need to use any of the above features, please use another mod instead.
 
 ### Description
