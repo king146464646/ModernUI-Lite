@@ -26,12 +26,10 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.PostChain;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundSource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.joml.Matrix4f;
-import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -61,8 +59,6 @@ public enum BlurHandler {
 
     public static volatile int sFramerateInactive;
     public static volatile int sFramerateMinimized;
-    public static volatile float sMasterVolumeInactive = 1;
-    public static volatile float sMasterVolumeMinimized = 1;
 
     private final Minecraft minecraft = Minecraft.getInstance();
 
@@ -95,8 +91,6 @@ public enum BlurHandler {
      * True if blur post-processing shader is loaded, though it may fail.
      */
     private boolean mBlurEffectLoaded;
-
-    private float mVolumeMultiplier = 1;
 
     /**
      * Use blur shader in game renderer post-processing.
@@ -249,31 +243,6 @@ public enum BlurHandler {
     }
 
     public void onClientTick() {
-        float targetVolumeMultiplier;
-        if (minecraft.isWindowActive()) {
-            targetVolumeMultiplier = 1;
-        } else if (sMasterVolumeMinimized < sMasterVolumeInactive &&
-                GLFW.glfwGetWindowAttrib(minecraft.getWindow().getWindow(), GLFW.GLFW_ICONIFIED) != 0) {
-            targetVolumeMultiplier = sMasterVolumeMinimized;
-        } else {
-            targetVolumeMultiplier = sMasterVolumeInactive;
-        }
-        if (mVolumeMultiplier != targetVolumeMultiplier) {
-            // fade down is slower, 1 second = 20 ticks
-            if (mVolumeMultiplier < targetVolumeMultiplier) {
-                mVolumeMultiplier = Math.min(
-                        mVolumeMultiplier + 0.5f,
-                        targetVolumeMultiplier
-                );
-            } else {
-                mVolumeMultiplier = Math.max(
-                        mVolumeMultiplier - 0.05f,
-                        targetVolumeMultiplier
-                );
-            }
-            float volume = minecraft.options.getSoundSourceVolume(SoundSource.MASTER);
-            minecraft.getSoundManager().updateSourceVolume(SoundSource.MASTER, volume * mVolumeMultiplier);
-        }
     }
 
     // INTERNAL HOOK

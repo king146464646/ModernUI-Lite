@@ -67,12 +67,7 @@ public class CenterFragment2 extends Fragment {
     public void onCreate(@Nullable DataSet savedInstanceState) {
         super.onCreate(savedInstanceState);
         var ft = getChildFragmentManager().beginTransaction();
-        var args = getArguments();
-        if (args != null && args.getBoolean("navigateToPreferences")) {
-            ft.replace(id_tab_container, PreferencesFragment.class, null, "preferences");
-        } else {
-            ft.replace(id_tab_container, DashboardFragment.class, null, "dashboard");
-        }
+        ft.replace(id_tab_container, PreferencesFragment.class, null, "preferences");
         ft
                 .setReorderingAllowed(true)
                 .commit();
@@ -161,17 +156,11 @@ public class CenterFragment2 extends Fragment {
                 );
             }
 
-            buttonGroup.addView(createNavButton(1001, "modernui.center.tab.dashboard",
-                    itemTextColor, icons, 2, 0,
-                    itemIconTint, itemRippleColor, activeIndicatorColor));
             buttonGroup.addView(createNavButton(1002, "modernui.center.tab.preferences",
                     itemTextColor, icons, 0, 0,
                     itemIconTint, itemRippleColor, activeIndicatorColor));
             buttonGroup.addView(createNavButton(1003, "modernui.center.tab.developerOptions",
                     itemTextColor, icons, 0, 6,
-                    itemIconTint, itemRippleColor, activeIndicatorColor));
-            buttonGroup.addView(createNavButton(1004, "soundCategory.music",
-                    itemTextColor, icons, 1, 1,
                     itemIconTint, itemRippleColor, activeIndicatorColor));
             /*if (ModernUIMod.isDeveloperMode()) {
                 buttonGroup.addView(createNavButton(1005, "Dev",
@@ -184,17 +173,12 @@ public class CenterFragment2 extends Fragment {
                         itemIconTint, itemRippleColor, activeIndicatorColor));
             }
 
-            var args = getArguments();
-            buttonGroup.check(args != null && args.getBoolean("navigateToPreferences") ? 1002 : 1001);
+            buttonGroup.check(1002);
 
             buttonGroup.setOnCheckedChangeListener((group, checkedId) -> {
                 var fm = getChildFragmentManager();
                 FragmentTransaction ft = null;
                 switch (checkedId) {
-                    case 1001 -> {
-                        ft = fm.beginTransaction()
-                                .replace(id_tab_container, DashboardFragment.class, null, "dashboard");
-                    }
                     case 1002 -> {
                         ft = fm.beginTransaction()
                                 .replace(id_tab_container, PreferencesFragment.class, null, "preferences");
@@ -202,10 +186,6 @@ public class CenterFragment2 extends Fragment {
                     case 1003 -> {
                         ft = fm.beginTransaction()
                                 .replace(id_tab_container, AdvancedOptionsFragment.class, null, "developerOptions");
-                    }
-                    case 1004 -> {
-                        ft = fm.beginTransaction()
-                                .replace(id_tab_container, MusicFragment.class, null, "music");
                     }
                     /*case 1005 -> {
                         ft = fm.beginTransaction()

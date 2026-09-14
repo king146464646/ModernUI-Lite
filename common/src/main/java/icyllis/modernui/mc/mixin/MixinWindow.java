@@ -20,7 +20,6 @@ package icyllis.modernui.mc.mixin;
 
 import com.mojang.blaze3d.platform.*;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.mc.ModernUIClient;
 import icyllis.modernui.mc.ModernUIMod;
 import icyllis.modernui.mc.MuiModApi;
@@ -32,7 +31,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.*;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import javax.annotation.Nullable;
 
@@ -51,16 +49,6 @@ public abstract class MixinWindow {
     @Shadow
     @Nullable
     public abstract Monitor findBestMonitor();
-
-    /**
-     * @author BloCamLimb
-     * @reason Make GUI scale more suitable, and not limited to even numbers when forceUnicode = true
-     */
-    @Inject(method = "calculateScale", at = @At("HEAD"), cancellable = true)
-    public void onCalculateScale(int guiScaleIn, boolean forceUnicode, CallbackInfoReturnable<Integer> ci) {
-        int r = MuiModApi.calcGuiScales((Window) (Object) this);
-        ci.setReturnValue(guiScaleIn > 0 ? MathUtil.clamp(guiScaleIn, r >> 8 & 0xf, r & 0xf) : r >> 4 & 0xf);
-    }
 
     @Inject(method = "setGuiScale", at = @At("HEAD"))
     private void onSetGuiScale(double scaleFactor, CallbackInfo ci) {

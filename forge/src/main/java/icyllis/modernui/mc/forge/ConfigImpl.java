@@ -231,7 +231,6 @@ public final class ConfigImpl {
         public final ForgeConfigSpec.IntValue mBackgroundDuration;
         public final ForgeConfigSpec.IntValue mBlurRadius;
         public final ForgeConfigSpec.ConfigValue<List<? extends String>> mBackgroundColor;
-        public final ForgeConfigSpec.BooleanValue mInventoryPause;
         public final ForgeConfigSpec.BooleanValue mTooltip;
         public final ForgeConfigSpec.BooleanValue mRoundedTooltip;
         public final ForgeConfigSpec.BooleanValue mCenterTooltipTitle;
@@ -256,15 +255,10 @@ public final class ConfigImpl {
         public final ForgeConfigSpec.ConfigValue<List<? extends String>> mTheme;
         public final ForgeConfigSpec.BooleanValue mForceRtl;
         public final ForgeConfigSpec.DoubleValue mFontScale;
-        public final ForgeConfigSpec.EnumValue<Config.Client.WindowMode> mWindowMode;
-        public final ForgeConfigSpec.BooleanValue mUseNewGuiScale;
-        //public final ForgeConfigSpec.BooleanValue mRemoveSignature;
         public final ForgeConfigSpec.BooleanValue mRemoveTelemetry;
         //public final ForgeConfigSpec.BooleanValue mSecurePublicKey;
         public final ForgeConfigSpec.IntValue mFramerateInactive;
         public final ForgeConfigSpec.IntValue mFramerateMinimized;
-        public final ForgeConfigSpec.DoubleValue mMasterVolumeInactive;
-        public final ForgeConfigSpec.DoubleValue mMasterVolumeMinimized;
 
         public final ForgeConfigSpec.IntValue mScrollbarSize;
         public final ForgeConfigSpec.IntValue mTouchSlop;
@@ -340,9 +334,6 @@ public final class ConfigImpl {
                         list.add(ChatScreen.class.getName());
                         return list;
                     }, o -> true);
-            mInventoryPause = builder.comment(
-                            "(Beta) Pause the game when inventory (also includes creative mode) opened.")
-                    .define("inventoryPause", false);
             mFramerateInactive = builder.comment(
                             "Framerate limit on window inactive (out of focus or minimized), 0 = no change.")
                     .defineInRange("framerateInactive", 30, 0, 255);
@@ -350,13 +341,6 @@ public final class ConfigImpl {
                             "Framerate limit on window minimized, 0 = same as framerate inactive.",
                             "This value will be no greater than framerate inactive.")
                     .defineInRange("framerateMinimized", 0, 0, 255);
-            mMasterVolumeInactive = builder.comment(
-                            "Master volume multiplier on window inactive (out of focus or minimized), 1 = no change.")
-                    .defineInRange("masterVolumeInactive", 0.5, 0, 1);
-            mMasterVolumeMinimized = builder.comment(
-                            "Master volume multiplier on window minimized, 1 = same as master volume inactive.",
-                            "This value will be no greater than master volume inactive.")
-                    .defineInRange("masterVolumeMinimized", 0.25, 0, 1);
 
             builder.pop();
 
@@ -459,10 +443,10 @@ public final class ConfigImpl {
                     "Show additional HUD bars added by ModernUI on the bottom-left of the screen.")
                     .define("hudBars", false);*/
 
-            mWindowMode = builder.comment("Control the window mode, normal mode does nothing.")
+            /*mWindowMode = builder.comment("Control the window mode, normal mode does nothing.")
                     .defineEnum("windowMode", Config.Client.WindowMode.NORMAL);
             mUseNewGuiScale = builder.comment("Whether to replace vanilla GUI scale button to slider with tips.")
-                    .define("useNewGuiScale", true);
+                    .define("useNewGuiScale", true);*/
 
             /*mSkipGLCapsError = builder.comment("UI renderer is disabled when the OpenGL capability test fails.",
                             "Sometimes the driver reports wrong values, you can enable this to ignore it.")

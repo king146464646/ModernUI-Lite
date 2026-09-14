@@ -19,7 +19,6 @@
 package icyllis.modernui.mc.fabric;
 
 import icyllis.modernui.core.Core;
-import icyllis.modernui.mc.StillAlive;
 
 final class EventHandler {
 
@@ -27,7 +26,6 @@ final class EventHandler {
 
         static void onRenderTick() {
             Core.flushMainCalls();
-            StillAlive.tick();
         }
     }
 }

@@ -21,7 +21,6 @@ package icyllis.modernui.mc.forge;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.mc.ModernUIMod;
-import icyllis.modernui.mc.StillAlive;
 import icyllis.modernui.mc.testforge.TestContainerMenu;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
@@ -147,7 +146,6 @@ final class EventHandler {
         @SubscribeEvent
         static void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
             Core.flushMainCalls();
-            StillAlive.tick();
         }
 
         /*@SubscribeEvent(receiveCanceled = true)

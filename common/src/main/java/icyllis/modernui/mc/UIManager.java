@@ -60,8 +60,6 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import org.apache.commons.io.output.StringBuilderWriter;
@@ -94,10 +92,7 @@ public abstract class UIManager implements LifecycleOwner {
     protected static final Marker MARKER = MarkerManager.getMarker("UIManager");
 
     // configs
-    public static volatile boolean sDingEnabled;
-    public static volatile String sDingSound;
-    public static volatile float sDingVolume = 0.25f;
-    public static volatile boolean sZoomEnabled;
+
 
     // the global instance, lazily init
     protected static volatile UIManager sInstance;
@@ -159,8 +154,7 @@ public abstract class UIManager implements LifecycleOwner {
     protected volatile MuiScreen mScreen;
 
     //protected boolean mFirstScreenOpened = false;
-    protected boolean mZoomMode = false;
-    protected boolean mZoomSmoothCamera;
+
 
 
     /// Lifecycle \\\
@@ -643,29 +637,6 @@ public abstract class UIManager implements LifecycleOwner {
     }
 
     public void onGameLoadFinished() {
-        if (sDingEnabled) {
-            glfwRequestWindowAttention(minecraft.getWindow().getWindow());
-            final String sound = sDingSound;
-            final float volume = sDingVolume;
-            if (volume > 0) {
-                ResourceLocation soundEvent = null;
-                if (sound != null && !sound.isEmpty()) {
-                    soundEvent = ResourceLocation.tryParse(sound);
-                    if (soundEvent == null) {
-                        LOGGER.warn(MARKER, "The specified ding sound \"{}\" has wrong format", sound);
-                    } else if (minecraft.getSoundManager().getSoundEvent(soundEvent) == null) {
-                        LOGGER.warn(MARKER, "The specified ding sound \"{}\" is not available", sound);
-                        soundEvent = null;
-                    }
-                }
-                final SoundEvent finalSoundEvent = soundEvent != null
-                        ? SoundEvent.createVariableRangeEvent(soundEvent)
-                        : SoundEvents.EXPERIENCE_ORB_PICKUP;
-                minecraft.getSoundManager().play(
-                        SimpleSoundInstance.forUI(finalSoundEvent, 1.0f, volume)
-                );
-            }
-        }
         if (ModernUIMod.isOptiFineLoaded() &&
                 ModernUIMod.isTextEngineEnabled()) {
             OptiFineIntegration.setFastRender(false);

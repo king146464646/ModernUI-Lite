@@ -19,17 +19,13 @@
 package icyllis.modernui.mc.neoforge;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.DataResult;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Handler;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.mc.*;
-import icyllis.modernui.mc.mixin.AccessOptions;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.*;
-import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
@@ -37,7 +33,6 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
-import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
 import net.neoforged.api.distmarker.Dist;
@@ -60,7 +55,6 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.IntStream;
 
 import static icyllis.modernui.mc.ModernUIMod.*;
 
@@ -197,7 +191,6 @@ final class Registration {
         @SubscribeEvent
         static void registerKeyMapping(@Nonnull RegisterKeyMappingsEvent event) {
             event.register(UIManagerForge.OPEN_CENTER_KEY);
-            event.register(UIManagerForge.ZOOM_KEY);
         }
 
         /*@SubscribeEvent
@@ -213,8 +206,6 @@ final class Registration {
             event.enqueueWork(() -> {
                 //ModernUI.getSelectedTypeface();
                 UIManagerForge.initializeRenderer();
-                // ensure it's applied and positioned
-                Config.CLIENT.mLastWindowMode.apply();
             });
 
             CrashReportCallables.registerCrashCallable("Fragments", () -> {
@@ -241,150 +232,6 @@ final class Registration {
                             (options
                             .guiScale))))
             );*/
-
-            if (ConfigImpl.CLIENT.mUseNewGuiScale.get()) {
-                final OptionInstance<Integer> newGuiScale = new OptionInstance<>(
-                        /*caption*/ "options.guiScale",
-                        /*tooltip*/ OptionInstance.noTooltip(),
-                        /*toString*/ (caption, value) -> {
-                    int r = MuiModApi.calcGuiScales();
-                    if (value == 0) { // auto
-                        int auto = r >> 4 & 0xf;
-                        return Options.genericValueLabel(caption,
-                                Component.translatable("options.guiScale.auto")
-                                        .append(Component.literal(" (" + auto + ")")));
-                    } else {
-                        MutableComponent valueComponent = Component.literal(value.toString());
-                        int min = r >> 8 & 0xf;
-                        int max = r & 0xf;
-                        if (value < min || value > max) {
-                            final MutableComponent hint;
-                            if (value < min) {
-                                hint = Component.literal(" (<" + min + ")");
-                            } else {
-                                hint = Component.literal(" (>" + max + ")");
-                            }
-                            valueComponent.append(hint);
-                            valueComponent.withStyle(ChatFormatting.RED);
-                        }
-                        return Options.genericValueLabel(caption, valueComponent);
-                    }
-                },
-                        /*values*/ new GuiScaleValueSet(),
-                        /*initialValue*/ 0,
-                        /*onValueUpdate*/ value -> {
-                    // execute in next tick, prevent transient GUI scale change
-                    Minecraft.getInstance().tell(() -> {
-                        Minecraft minecraft = Minecraft.getInstance();
-                        if ((int) minecraft.getWindow().getGuiScale() !=
-                                minecraft.getWindow().calculateScale(value, false)) {
-                            minecraft.resizeDisplay();
-                        }
-                    });
-                });
-                // no barrier
-                Options options = Minecraft.getInstance().options;
-                newGuiScale.set(options.guiScale().get());
-                ((AccessOptions) options).setGuiScale(newGuiScale);
-                if (ModernUIMod.isOptiFineLoaded()) {
-                    OptiFineIntegration.setGuiScale(newGuiScale);
-                    LOGGER.debug(MARKER, "Override OptiFine Gui Scale");
-                }
-            }
-
-            /*Option[] settings = null;
-            boolean captured = false;
-            if (ModernUIForge.isOptiFineLoaded()) {
-                try {
-                    Field field = VideoSettingsScreen.class.getDeclaredField("videoOptions");
-                    field.setAccessible(true);
-                    settings = (Option[]) field.get(null);
-                } catch (Exception e) {
-                    LOGGER.error(ModernUI.MARKER, "Failed to be compatible with OptiFine video settings", e);
-                }
-            } else {
-                settings = AccessVideoSettings.getOptions();
-            }
-            if (settings != null) {
-                for (int i = 0; i < settings.length; i++) {
-                    if (settings[i] != Option.GUI_SCALE) {
-                        continue;
-                    }
-                    ProgressOption option = new ProgressOption("options.guiScale", 0, 2, 1,
-                            options -> (double) options.guiScale,
-                            (options, aDouble) -> {
-                                if (options.guiScale != aDouble.intValue()) {
-                                    options.guiScale = aDouble.intValue();
-                                    Minecraft.getInstance().resizeDisplay();
-                                }
-                            },
-                            (options, progressOption) -> options.guiScale == 0 ?
-                                    ((AccessOptions) progressOption)
-                                            .callGenericValueLabel(new TranslatableComponent("options.guiScale.auto")
-                                                    .append(new TextComponent(" (" + (MuiForgeApi.calcGuiScales() >> 4 &
-                                                    0xf) + ")"))) :
-                                    ((AccessOptions) progressOption)
-                                            .callGenericValueLabel(new TextComponent(Integer.toString(options
-                                            .guiScale)))
-                    );
-                    settings[i] = EventHandler.Client.sNewGuiScale = option;
-                    captured = true;
-                    break;
-                }
-            }
-            if (!captured) {
-                LOGGER.error(MARKER, "Failed to capture video settings");
-            }*/
-        }
-
-        static class GuiScaleValueSet implements OptionInstance.IntRangeBase,
-                OptionInstance.SliderableOrCyclableValueSet<Integer> {
-
-            @Override
-            public int minInclusive() {
-                return 0;
-            }
-
-            @Override
-            public int maxInclusive() {
-                return MuiModApi.MAX_GUI_SCALE;
-            }
-
-            @Nonnull
-            @Override
-            public Integer fromSliderValue(double progress) {
-                return Math.toIntExact(Math.round(Mth.map(progress, 0.0, 1.0, minInclusive(), maxInclusive())));
-            }
-
-            @Nonnull
-            @Override
-            public Optional<Integer> validateValue(@Nonnull Integer value) {
-                return Optional.of(Mth.clamp(value, minInclusive(), maxInclusive()));
-            }
-
-            @Nonnull
-            @Override
-            public Codec<Integer> codec() {
-                return Codec.INT.validate(value -> {
-                    int max = maxInclusive() + 1;
-                    if (value.compareTo(minInclusive()) >= 0 && value.compareTo(max) <= 0) {
-                        return DataResult.success(value);
-                    }
-                    return DataResult.error(() ->
-                            "Value " + value + " outside of range [" + minInclusive() + ":" + max + "]", value);
-                });
-            }
-
-            @Nonnull
-            @Override
-            public CycleButton.ValueListSupplier<Integer> valueListSupplier() {
-                return CycleButton.ValueListSupplier.create(IntStream.range(minInclusive(), maxInclusive() + 1).boxed().toList());
-            }
-
-            @Override
-            public boolean createCycleButton() {
-                return false;
-            }
         }
 
         /*@SubscribeEvent

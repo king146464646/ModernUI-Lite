@@ -1,6 +1,17 @@
 # Modern UI for Minecraft
 [![CurseForge](http://cf.way2muchnoise.eu/full_352491_downloads.svg)](https://www.curseforge.com/minecraft/mc-mods/modern-ui)
 [![CurseForge](http://cf.way2muchnoise.eu/versions/For%20Minecraft_352491_all.svg)](https://www.curseforge.com/minecraft/mc-mods/modern-ui)
+### This project removed features are as follows:
+1.Home tab
+2.OptiFine Zoom
+3.GUI Scale
+4.Window Mode
+5.Inventory Pause
+6.Play Music
+7.Master Volume Multiplier
+8.Game load notification sound
+If you need to use any of the above features, please use another mod instead.
+
 ### Description
 Modern UI for Minecraft, is a Minecraft Mod that is based on [Modern UI Core Framework](https://github.com/BloCamLimb/ModernUI) and Modern UI Core Extensions.
 It provides Modern UI bootstrap program in Minecraft environment and Modding API based on Forge/Fabric, 

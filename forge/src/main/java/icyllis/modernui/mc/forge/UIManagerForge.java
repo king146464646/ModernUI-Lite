@@ -63,10 +63,6 @@ public final class UIManagerForge extends UIManager implements LifecycleOwner {
     public static final KeyMapping OPEN_CENTER_KEY = new KeyMapping(
             "key.modernui.openCenter", KeyConflictContext.UNIVERSAL, KeyModifier.CONTROL,
             InputConstants.Type.KEYSYM, GLFW_KEY_K, "Modern UI");
-    @SuppressWarnings("NoTranslation")
-    public static final KeyMapping ZOOM_KEY = new KeyMapping(
-            "key.modernui.zoom", KeyConflictContext.IN_GAME, KeyModifier.NONE,
-            InputConstants.Type.KEYSYM, GLFW_KEY_C, "Modern UI");
 
     /*public static final Method SEND_TO_CHAT =
             ObfuscationReflectionHelper.findMethod(ChatComponent.class, "m_93790_",
@@ -155,8 +151,6 @@ public final class UIManagerForge extends UIManager implements LifecycleOwner {
     @Override
     public void onGameLoadFinished() {
         super.onGameLoadFinished();
-        // ensure it's applied and positioned
-        Config.CLIENT.mLastWindowMode.apply();
     }
 
     @SuppressWarnings("unchecked")
@@ -305,25 +299,6 @@ public final class UIManagerForge extends UIManager implements LifecycleOwner {
 
     @SubscribeEvent
     void onChangeFov(@Nonnull ViewportEvent.ComputeFov event) {
-        boolean zoomActive = false;
-        if (sZoomEnabled && minecraft.screen == null) {
-            zoomActive = ZOOM_KEY.isDown();
-        }
-        if (zoomActive) {
-            if (!mZoomMode) {
-                mZoomMode = true;
-                mZoomSmoothCamera = minecraft.options.smoothCamera;
-                minecraft.options.smoothCamera = true;
-                minecraft.levelRenderer.needsUpdate();
-            }
-            event.setFOV(
-                    event.getFOV() * 0.25
-            );
-        } else if (mZoomMode) {
-            mZoomMode = false;
-            minecraft.options.smoothCamera = mZoomSmoothCamera;
-            minecraft.levelRenderer.needsUpdate();
-        }
     }
 
     //boolean mPendingRepostCursorEvent = false;

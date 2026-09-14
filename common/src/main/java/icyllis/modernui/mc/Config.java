@@ -18,9 +18,6 @@
 
 package icyllis.modernui.mc;
 
-import com.mojang.blaze3d.platform.Monitor;
-import com.mojang.blaze3d.platform.VideoMode;
-import com.mojang.blaze3d.platform.Window;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
 import icyllis.modernui.core.Core;
@@ -45,8 +42,6 @@ import icyllis.modernui.view.ViewConfiguration;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.I18n;
 import org.jetbrains.annotations.ApiStatus;
-import org.lwjgl.glfw.GLFW;
-import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 import java.util.Collections;
@@ -96,7 +91,6 @@ public final class Config {
         public final ConfigItem<Integer> mBackgroundDuration;
         public final ConfigItem<Integer> mBlurRadius;
         public final ConfigItem<List<? extends String>> mBackgroundColor;
-        public final ConfigItem<Boolean> mInventoryPause;
         public final ConfigItem<Boolean> mTooltip;
         public final ConfigItem<Boolean> mRoundedTooltip;
         public final ConfigItem<Boolean> mCenterTooltipTitle;
@@ -112,20 +106,12 @@ public final class Config {
         public final ConfigItem<Boolean> mAdaptiveTooltipColors;
         public final ConfigItem<Integer> mTooltipArrowScrollFactor;
         public final ConfigItem<Boolean> mTooltipLineWrapping;
-        public final ConfigItem<Boolean> mDing;
-        public final ConfigItem<String> mDingSound;
-        public final ConfigItem<Double> mDingVolume;
-        public final ConfigItem<Boolean> mZoom;
         public final ConfigItem<List<? extends String>> mTheme;
         public final ConfigItem<Boolean> mForceRtl;
         public final ConfigItem<Double> mFontScale;
-        public final ConfigItem<WindowMode> mWindowMode;
-        public final ConfigItem<Boolean> mUseNewGuiScale;
         public final ConfigItem<Boolean> mRemoveTelemetry;
         public final ConfigItem<Integer> mFramerateInactive;
         public final ConfigItem<Integer> mFramerateMinimized;
-        public final ConfigItem<Double> mMasterVolumeInactive;
-        public final ConfigItem<Double> mMasterVolumeMinimized;
         public final ConfigItem<Integer> mScrollbarSize;
         public final ConfigItem<Integer> mTouchSlop;
         public final ConfigItem<Integer> mHoverSlop;
@@ -147,7 +133,6 @@ public final class Config {
         public final ConfigItem<Boolean> mLinearMetrics;
         public final ConfigItem<Boolean> mEmojiShortcodes;
 
-        public WindowMode mLastWindowMode = WindowMode.NORMAL;
         public volatile List<? extends String> mLastTheme;
 
         private Client(Map<String, ConfigItem<?>> map) {
@@ -157,7 +142,6 @@ public final class Config {
             mBackgroundDuration = get(map, "mBackgroundDuration");
             mBlurRadius = get(map, "mBlurRadius");
             mBackgroundColor = get(map, "mBackgroundColor");
-            mInventoryPause = get(map, "mInventoryPause");
             mTooltip = get(map, "mTooltip");
             mRoundedTooltip = get(map, "mRoundedTooltip");
             mCenterTooltipTitle = get(map, "mCenterTooltipTitle");
@@ -173,20 +157,12 @@ public final class Config {
             mAdaptiveTooltipColors = get(map, "mAdaptiveTooltipColors");
             mTooltipArrowScrollFactor = get(map, "mTooltipArrowScrollFactor");
             mTooltipLineWrapping = get(map, "mTooltipLineWrapping");
-            mDing = get(map, "mDing");
-            mDingSound = get(map, "mDingSound");
-            mDingVolume = get(map, "mDingVolume");
-            mZoom = get(map, "mZoom");
             mTheme = get(map, "mTheme");
             mForceRtl = get(map, "mForceRtl");
             mFontScale = get(map, "mFontScale");
-            mWindowMode = get(map, "mWindowMode");
-            mUseNewGuiScale = get(map, "mUseNewGuiScale");
             mRemoveTelemetry = get(map, "mRemoveTelemetry");
             mFramerateInactive = get(map, "mFramerateInactive");
             mFramerateMinimized = get(map, "mFramerateMinimized");
-            mMasterVolumeInactive = get(map, "mMasterVolumeInactive");
-            mMasterVolumeMinimized = get(map, "mMasterVolumeMinimized");
             mScrollbarSize = get(map, "mScrollbarSize");
             mTouchSlop = get(map, "mTouchSlop");
             mHoverSlop = get(map, "mHoverSlop");
@@ -222,11 +198,6 @@ public final class Config {
                     mFramerateMinimized.get(),
                     BlurHandler.sFramerateInactive
             );
-            BlurHandler.sMasterVolumeInactive = mMasterVolumeInactive.get().floatValue();
-            BlurHandler.sMasterVolumeMinimized = Math.min(
-                    mMasterVolumeMinimized.get().floatValue(),
-                    BlurHandler.sMasterVolumeInactive
-            );
 
             List<? extends String> inColors = mBackgroundColor.get();
             int[] resultColors = new int[4];
@@ -246,7 +217,6 @@ public final class Config {
 
             BlurHandler.INSTANCE.loadBlacklist(mBlurBlacklist.get());
 
-            ModernUIClient.sInventoryPause = mInventoryPause.get();
             //ModernUIForge.sRemoveMessageSignature = mRemoveSignature.get();
             ModernUIClient.sRemoveTelemetrySession = mRemoveTelemetry.get();
             //ModernUIForge.sSecureProfilePublicKey = mSecurePublicKey.get();
@@ -293,19 +263,6 @@ public final class Config {
             TooltipRenderer.sArrowScrollFactor = mTooltipArrowScrollFactor.get();
             if (mTooltipLineWrapping != null) {
                 TooltipRenderer.sLineWrapping_FabricOnly = mTooltipLineWrapping.get();
-            }
-
-            UIManager.sDingEnabled = mDing.get();
-            UIManager.sDingSound = mDingSound.get();
-            UIManager.sDingVolume = mDingVolume.get().floatValue();
-            if (mZoom != null) {
-                UIManager.sZoomEnabled = mZoom.get() && !ModernUIMod.isOptiFineLoaded();
-            }
-
-            WindowMode windowMode = mWindowMode.get();
-            if (mLastWindowMode != windowMode) {
-                mLastWindowMode = windowMode;
-                Minecraft.getInstance().tell(() -> mLastWindowMode.apply());
             }
 
             //TestHUD.sBars = hudBars.get();
@@ -407,90 +364,6 @@ public final class Config {
                         }
                     }
                 }
-            }
-        }
-
-        public enum WindowMode {
-            NORMAL,
-            FULLSCREEN,
-            FULLSCREEN_BORDERLESS,
-            MAXIMIZED,
-            MAXIMIZED_BORDERLESS,
-            WINDOWED,
-            WINDOWED_BORDERLESS;
-
-            public void apply() {
-                if (this == NORMAL) {
-                    return;
-                }
-                Window window = Minecraft.getInstance().getWindow();
-                switch (this) {
-                    case FULLSCREEN -> {
-                        if (!window.isFullscreen()) {
-                            window.toggleFullScreen();
-                        }
-                    }
-                    case FULLSCREEN_BORDERLESS -> {
-                        if (window.isFullscreen()) {
-                            window.toggleFullScreen();
-                        }
-                        GLFW.glfwRestoreWindow(window.getWindow());
-                        GLFW.glfwSetWindowAttrib(window.getWindow(),
-                                GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE);
-                        Monitor monitor = window.findBestMonitor();
-                        if (monitor != null) {
-                            VideoMode videoMode = monitor.getCurrentMode();
-                            int x = monitor.getX();
-                            int y = monitor.getY();
-                            int width = videoMode.getWidth();
-                            int height = videoMode.getHeight();
-                            GLFW.glfwSetWindowMonitor(window.getWindow(), MemoryUtil.NULL,
-                                    x, y, width, height, GLFW.GLFW_DONT_CARE);
-                        } else {
-                            GLFW.glfwMaximizeWindow(window.getWindow());
-                        }
-                    }
-                    case MAXIMIZED -> {
-                        if (window.isFullscreen()) {
-                            window.toggleFullScreen();
-                        }
-                        GLFW.glfwRestoreWindow(window.getWindow());
-                        GLFW.glfwSetWindowAttrib(window.getWindow(),
-                                GLFW.GLFW_DECORATED, GLFW.GLFW_TRUE);
-                        GLFW.glfwMaximizeWindow(window.getWindow());
-                    }
-                    case MAXIMIZED_BORDERLESS -> {
-                        if (window.isFullscreen()) {
-                            window.toggleFullScreen();
-                        }
-                        GLFW.glfwRestoreWindow(window.getWindow());
-                        GLFW.glfwSetWindowAttrib(window.getWindow(),
-                                GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE);
-                        GLFW.glfwMaximizeWindow(window.getWindow());
-                    }
-                    case WINDOWED -> {
-                        if (window.isFullscreen()) {
-                            window.toggleFullScreen();
-                        }
-                        GLFW.glfwSetWindowAttrib(window.getWindow(),
-                                GLFW.GLFW_DECORATED, GLFW.GLFW_TRUE);
-                        GLFW.glfwRestoreWindow(window.getWindow());
-                    }
-                    case WINDOWED_BORDERLESS -> {
-                        if (window.isFullscreen()) {
-                            window.toggleFullScreen();
-                        }
-                        GLFW.glfwSetWindowAttrib(window.getWindow(),
-                                GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE);
-                        GLFW.glfwRestoreWindow(window.getWindow());
-                    }
-                }
-            }
-
-            @Nonnull
-            @Override
-            public String toString() {
-                return I18n.get("modernui.windowMode." + name().toLowerCase(Locale.ROOT));
             }
         }
     }

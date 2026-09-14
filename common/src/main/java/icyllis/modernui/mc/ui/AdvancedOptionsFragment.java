@@ -262,11 +262,6 @@ public class AdvancedOptionsFragment extends Fragment {
                 category.addView(button);
             }
             {
-                var button = createDebugButton(context, "Reset changelogs");
-                button.setOnClickListener((__) -> DashboardFragment.sChangelogs = null);
-                category.addView(button);
-            }
-            {
                 var button = createDebugButton(context, "Purge GPU resources on immediate context");
                 button.setOnClickListener((__) ->
                         Core.executeOnMainThread(() ->

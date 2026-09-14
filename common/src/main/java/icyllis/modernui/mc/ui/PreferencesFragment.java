@@ -246,8 +246,6 @@ public class PreferencesFragment extends Fragment {
         {
             var list = createCategoryList(content, null);
 
-            list.addView(createGuiScaleOption(context));
-
             list.addView(createColorOpacityOption(context, "modernui.center.screen.backgroundOpacity",
                     Config.CLIENT.mBackgroundColor, onChanged));
 
@@ -271,11 +269,6 @@ public class PreferencesFragment extends Fragment {
                     1, Config.CLIENT.mBlurRadius, onChanged)
                     .create(list, 2);
 
-            new DropDownOption<>(context, "modernui.center.screen.windowMode",
-                    Config.Client.WindowMode.values(),
-                    Config.CLIENT.mWindowMode, onChanged)
-                    .create(list);
-
             new IntegerOption(context, "modernui.center.screen.framerateInactive",
                     5, Config.CLIENT.mFramerateInactive, onChanged)
                     .create(list, 3);
@@ -283,18 +276,6 @@ public class PreferencesFragment extends Fragment {
             new IntegerOption(context, "modernui.center.screen.framerateMinimized",
                     5, Config.CLIENT.mFramerateMinimized, onChanged)
                     .create(list, 3);
-
-            new FloatOption(context, "modernui.center.screen.masterVolumeInactive",
-                    Config.CLIENT.mMasterVolumeInactive, 100, onChanged)
-                    .create(list, 4);
-
-            new FloatOption(context, "modernui.center.screen.masterVolumeMinimized",
-                    Config.CLIENT.mMasterVolumeMinimized, 100, onChanged)
-                    .create(list, 4);
-
-            new BooleanOption(context, "modernui.center.screen.inventoryPause",
-                    Config.CLIENT.mInventoryPause, onChanged)
-                    .create(list);
 
             content.addView(list);
         }
@@ -508,16 +489,6 @@ public class PreferencesFragment extends Fragment {
 
         {
             var list = createCategoryList(content, null);
-
-            new BooleanOption(context, "modernui.center.extension.ding",
-                    Config.CLIENT.mDing, onChanged)
-                    .create(list);
-
-            if (Config.CLIENT.mZoom != null) {
-                new BooleanOption(context, "key.modernui.zoom",
-                        Config.CLIENT.mZoom, onChanged)
-                        .create(list);
-            }
 
             new BooleanOption(context, "modernui.center.text.emojiShortcodes",
                     Config.CLIENT.mEmojiShortcodes, onChanged)
@@ -980,106 +951,6 @@ public class PreferencesFragment extends Fragment {
             }
             return false;
         }
-    }
-
-    private static LinearLayout createGuiScaleOption(Context context) {
-        var layout = new LinearLayout(context);
-        layout.setOrientation(LinearLayout.HORIZONTAL);
-        layout.setHorizontalGravity(Gravity.START);
-
-        final int dp6 = layout.dp(6);
-        {
-            var title = new TextView(context);
-            title.setText(ThemeControl.stripFormattingCodes(I18n.get("options.guiScale")));
-            title.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
-            title.setTextSize(14);
-
-            var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT, 1);
-            params.gravity = Gravity.START | Gravity.CENTER_VERTICAL;
-            layout.addView(title, params);
-        }
-
-        var tv = new TextView(context);
-        {
-            tv.setTextAppearance(R.attr.textAppearanceLabelMedium);
-            var value = new TypedValue();
-            if (context.getTheme().resolveAttribute(R.ns, R.attr.colorError, value, true))
-                tv.setTextColor(context.getResources().loadColorStateList(value, null, context.getTheme()));
-            var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
-            params.gravity = Gravity.CENTER_VERTICAL;
-            params.setMargins(dp6, 0, dp6, 0);
-            layout.addView(tv, params);
-        }
-
-        {
-            var spinner = new Spinner(context);
-
-            List<GuiScaleItem> values = new ArrayList<>(MuiModApi.MAX_GUI_SCALE);
-            for (int i = 0; i <= MuiModApi.MAX_GUI_SCALE; i++) {
-                if (i == 1) continue;
-                values.add(new GuiScaleItem(i));
-            }
-
-            spinner.setAdapter(new ArrayAdapter<>(context, values));
-            int curValue = Minecraft.getInstance().options.guiScale().get();
-            spinner.setSelection(curValue == 0 ? 0 : curValue - 1);
-            spinner.setOnItemSelectedListener((parent, view, position, id) -> {
-                int newValue = position == 0 ? 0 : position + 1;
-                Core.executeOnMainThread(() -> {
-                    Minecraft minecraft = Minecraft.getInstance();
-                    minecraft.options.guiScale().set(newValue);
-                    // ensure it's applied
-                    if ((int) minecraft.getWindow().getGuiScale() !=
-                            minecraft.getWindow().calculateScale(newValue, false)) {
-                        minecraft.resizeDisplay();
-                    }
-                    minecraft.options.save();
-                });
-                tv.setText(guiScaleToHintText(newValue));
-            });
-            tv.setText(guiScaleToHintText(curValue));
-
-            var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
-            params.gravity = Gravity.CENTER_VERTICAL;
-            layout.addView(spinner, params);
-        }
-
-        var params = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
-        params.gravity = Gravity.CENTER;
-        params.setMargins(dp6, 0, dp6, 0);
-        layout.setMinimumHeight(layout.dp(44));
-        layout.setLayoutParams(params);
-
-        return layout;
-    }
-
-    private record GuiScaleItem(int scale) {
-        @Override
-        public String toString() {
-            if (scale == 0) {
-                int r = MuiModApi.calcGuiScales();
-                int auto = r >> 4 & 0xf;
-                return I18n.get("options.guiScale.auto") + " (" + auto + "x)";
-            }
-            return guiScaleToString(scale);
-        }
-    }
-
-    private static CharSequence guiScaleToHintText(int value) {
-        if (value != 0) {
-            int r = MuiModApi.calcGuiScales();
-            int min = r >> 8 & 0xf;
-            int max = r & 0xf;
-            if (value < min || value > max) {
-                int scale = (value < min ? min : max);
-                return I18n.get("gui.modernui.current_s", guiScaleToString(scale));
-            }
-        }
-        return "";
-    }
-
-    private static String guiScaleToString(int scale) {
-        return (scale * 50) + "% (" + scale + "x)";
     }
 
     @NonNull

@@ -21,7 +21,6 @@ package icyllis.modernui.mc.neoforge;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.mc.ModernUIMod;
-import icyllis.modernui.mc.StillAlive;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.MenuProvider;
@@ -145,13 +144,11 @@ final class EventHandler {
         @SubscribeEvent
         static void onRenderFramePre(@Nonnull RenderFrameEvent.Pre event) {
             Core.flushMainCalls();
-            StillAlive.tick();
         }
 
         @SubscribeEvent
         static void onRenderFramePost(@Nonnull RenderFrameEvent.Post event) {
             Core.flushMainCalls();
-            StillAlive.tick();
         }
 
         /*@SubscribeEvent(receiveCanceled = true)

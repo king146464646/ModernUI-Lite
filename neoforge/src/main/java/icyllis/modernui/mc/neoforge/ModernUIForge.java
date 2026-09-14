@@ -21,7 +21,6 @@ package icyllis.modernui.mc.neoforge;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.mc.*;
 import icyllis.modernui.mc.ui.CenterFragment2;
-import icyllis.modernui.util.DataSet;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.LanguageManager;
 import net.neoforged.api.distmarker.Dist;
@@ -136,10 +135,7 @@ public final class ModernUIForge extends ModernUIMod {
             );
             modContainer.registerExtensionPoint(IConfigScreenFactory.class,
                     (mc, modsScreen) -> {
-                        var args = new DataSet();
-                        args.putBoolean("navigateToPreferences", true);
                         var fragment = new CenterFragment2();
-                        fragment.setArguments(args);
                         return MuiForgeApi.get().createScreen(fragment, null, modsScreen);
                     }
             );

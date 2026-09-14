@@ -113,7 +113,5 @@ public final class UIManagerFabric extends UIManager {
     @Override
     public void onGameLoadFinished() {
         super.onGameLoadFinished();
-        // ensure it's applied and positioned
-        Config.CLIENT.mLastWindowMode.apply();
     }
 }
