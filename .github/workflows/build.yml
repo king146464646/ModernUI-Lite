@@ -34,11 +34,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Set up JDK 21.0.7
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          # Pin the exact patch release: newer 21.0.x updates changed javac's
+          # handling of RuntimeInvisibleParameterAnnotations and break reading
+          # our dependency jars (JDK-8334870 / JDK-8359336).
+          java-version: '21.0.7'
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
