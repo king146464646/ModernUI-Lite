@@ -313,7 +313,7 @@ public final class ConfigImpl {
                     .define("blurWithBackground", true);*/
             mAdditionalBlurEffect = builder.comment(
                             "Whether to add blur effect to GUI screens that have a background and do not originate from Modern UI.")
-                    .define("additionalBlurEffect", true);
+                    .define("additionalBlurEffect", false);
             mOverrideVanillaBlur = builder.comment(
                             "Whether to replace Vanilla 3-pass box blur with Modern UI Gaussian blur.",
                             "This gives you better quality and performance, recommend setting this to true.")
