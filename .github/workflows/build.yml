@@ -34,31 +34,60 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21.0.7
-        id: jdk
+      # javac 21 rejects valid RuntimeInvisibleParameterAnnotations attributes
+      # in our dependencies (JDK-8334870, fixed in JDK 24, still unbackported to
+      # 21 as JDK-8360894). Compile with javac 25 instead.
+      #
+      # Gradle 8.8 cannot RUN on Java 25, so install 25 first for the compiler
+      # and then 21, which stays as JAVA_HOME for Gradle itself.
+      #
+      # Output stays Java 21-compatible because build.gradle already sets
+      # options.release.set(21) -> javac runs with "--release 21", which emits
+      # class file major version 65 and forbids any post-21 APIs.
+      - name: Set up JDK 25 (compiler)
+        id: jdk25
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          # 21.0.8 introduced a javac ClassReader regression (JDK-8341779 /
-          # JDK-8359336) that makes javac report "bad class file ... bad
-          # RuntimeInvisibleParameterAnnotations attribute" on perfectly valid
-          # class files. Pin the last known-good patch release.
-          java-version: '21.0.7'
+          java-version: '25'
+
+      - name: Set up JDK 21 (Gradle runtime)
+        id: jdk21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+
+      - name: Point JavaCompile at the JDK 25 javac
+        shell: bash
+        # Only the compile tasks are switched over; the declared toolchain stays
+        # at 21 so plugins (Loom/minivan) keep seeing it. build.gradle's
+        # options.release.set(21) is untouched and keeps the output on Java 21.
+        run: |
+          cat > "$RUNNER_TEMP/jdk25-compiler.init.gradle" <<'EOF'
+          allprojects { proj ->
+              proj.plugins.withId('java') {
+                  proj.tasks.withType(org.gradle.api.tasks.compile.JavaCompile).configureEach { t ->
+                      t.javaCompiler = proj.javaToolchains.compilerFor {
+                          languageVersion = JavaLanguageVersion.of(25)
+                      }
+                  }
+              }
+          }
+          EOF
+          echo "--- init script ---"
+          cat "$RUNNER_TEMP/jdk25-compiler.init.gradle"
 
       - name: Show Java version
         shell: bash
         run: |
           echo "JAVA_HOME=$JAVA_HOME"
-          java -version
-          "$JAVA_HOME/bin/javac" -version
-          echo "--- Gradle toolchains (same flags as the build) ---"
-          sh ./gradlew -q javaToolchains --console=plain \
-            -Dorg.gradle.java.installations.paths="${{ steps.jdk.outputs.path }}" \
-            -Dorg.gradle.java.installations.auto-detect=false \
-            -Dorg.gradle.java.installations.auto-download=false || true
+          echo "Gradle runs on:   $(java -version 2>&1 | head -1)"
+          echo "Compiler JDK 21:  ${{ steps.jdk21.outputs.path }}"
+          echo "Compiler JDK 25:  ${{ steps.jdk25.outputs.path }}"
 
       - name: Read versions
         id: ver
@@ -72,14 +101,13 @@ jobs:
       - name: Build ${{ matrix.name }} jar
         shell: bash
         # gradlew may not carry the executable bit on Windows-created repos, so run it via sh
-        # Force the Gradle toolchain to use exactly the JDK installed above. The runner
-        # ships several preinstalled 21.0.x builds and toolchain auto-detection would
-        # otherwise pick the newest one, which carries the javac ClassReader regression
-        # (JDK-8341779 / JDK-8359336) that breaks class file reading.
-        # NOTE: org.gradle.* are Gradle properties, so they use -D (not -P).
+        # org.gradle.* are Gradle properties, so they use -D (not -P).
+        # Both JDKs are handed to toolchain lookup: 21 satisfies the declared
+        # toolchain, 25 satisfies the compiler override from the init script.
         run: >
           sh ./gradlew "${{ matrix.project }}:remapJar" --stacktrace
-          -Dorg.gradle.java.installations.paths="${{ steps.jdk.outputs.path }}"
+          -I "$RUNNER_TEMP/jdk25-compiler.init.gradle"
+          -Dorg.gradle.java.installations.paths="${{ steps.jdk21.outputs.path }},${{ steps.jdk25.outputs.path }}"
           -Dorg.gradle.java.installations.auto-detect=false
           -Dorg.gradle.java.installations.auto-download=false
 
