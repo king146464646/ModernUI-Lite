@@ -35,16 +35,30 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 21.0.7
+        id: jdk
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          # Pin the exact patch release: newer 21.0.x updates changed javac's
-          # handling of RuntimeInvisibleParameterAnnotations and break reading
-          # our dependency jars (JDK-8334870 / JDK-8359336).
+          # 21.0.8 introduced a javac ClassReader regression (JDK-8341779 /
+          # JDK-8359336) that makes javac report "bad class file ... bad
+          # RuntimeInvisibleParameterAnnotations attribute" on perfectly valid
+          # class files. Pin the last known-good patch release.
           java-version: '21.0.7'
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+
+      - name: Show Java version
+        shell: bash
+        run: |
+          echo "JAVA_HOME=$JAVA_HOME"
+          java -version
+          "$JAVA_HOME/bin/javac" -version
+          echo "--- Gradle toolchains (same flags as the build) ---"
+          sh ./gradlew -q javaToolchains --console=plain \
+            -Dorg.gradle.java.installations.paths="${{ steps.jdk.outputs.path }}" \
+            -Dorg.gradle.java.installations.auto-detect=false \
+            -Dorg.gradle.java.installations.auto-download=false || true
 
       - name: Read versions
         id: ver
@@ -58,7 +72,16 @@ jobs:
       - name: Build ${{ matrix.name }} jar
         shell: bash
         # gradlew may not carry the executable bit on Windows-created repos, so run it via sh
-        run: sh ./gradlew "${{ matrix.project }}:remapJar" --stacktrace
+        # Force the Gradle toolchain to use exactly the JDK installed above. The runner
+        # ships several preinstalled 21.0.x builds and toolchain auto-detection would
+        # otherwise pick the newest one, which carries the javac ClassReader regression
+        # (JDK-8341779 / JDK-8359336) that breaks class file reading.
+        # NOTE: org.gradle.* are Gradle properties, so they use -D (not -P).
+        run: >
+          sh ./gradlew "${{ matrix.project }}:remapJar" --stacktrace
+          -Dorg.gradle.java.installations.paths="${{ steps.jdk.outputs.path }}"
+          -Dorg.gradle.java.installations.auto-detect=false
+          -Dorg.gradle.java.installations.auto-download=false
 
       - name: List output
         shell: bash
