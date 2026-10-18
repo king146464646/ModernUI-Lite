@@ -24,6 +24,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.mc.text.GlyphManager;
 import icyllis.modernui.mc.text.TextLayoutEngine;
+import icyllis.modernui.text.Typeface;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -163,12 +164,14 @@ public class FontResourceManager implements PreparableReloadListener {
         mPrefixedEmojiShortcodes.clear();
         mPrefixedEmojiShortcodes.putAll(results.mPrefixedEmojiShortcodes);
         // reload the whole engine
+        Typeface oldTypeface = ModernUI.getSelectedTypeface();
         try {
             ModernUIClient.getInstance().reloadTypeface();
         } catch (IllegalStateException ignored) {
             // happen in broken mod state
         }
         reloadAll();
+        ModernUIClient.getInstance().onTypefaceReplaced(oldTypeface);
     }
 
     // SYNC, close native resources
@@ -203,7 +206,7 @@ public class FontResourceManager implements PreparableReloadListener {
                         continue CYCLE;
                     }
                     boolean ec = Emoji.isEmoji(c);
-                    boolean ecc = isEmoji_Unicode16_workaround(c);
+                    boolean ecc = isEmoji_ModernUnicodeWorkaround(c);
                     if (i == 0 && !ec && !ecc) {
                         continue CYCLE;
                     }
@@ -226,7 +229,7 @@ public class FontResourceManager implements PreparableReloadListener {
         LOGGER.info(GlyphManager.MARKER, "Scanned emoji map size: {}",
                 map.size());
         if (!files.isEmpty()) {
-            var coverage = new IntOpenHashSet(1478);
+            var coverage = new IntOpenHashSet(1501);
             EmojiData._populateEmojiFontCoverage_(coverage);
             results.mEmojiFont = new EmojiFont("Google Noto Color Emoji",
                     coverage,
@@ -240,13 +243,21 @@ public class FontResourceManager implements PreparableReloadListener {
         }
     }
 
-    //FIXME Minecraft 1.21.1 still uses ICU-73.2, but Unicode 16 CLDR was added in ICU-76
-    // remove once Minecraft's ICU updated
-    static boolean isEmoji_Unicode16_workaround(int codePoint) {
-        return codePoint == 0x1FAE9 || codePoint == 0x1FAC6 ||
-                codePoint == 0x1FABE || codePoint == 0x1FADC ||
-                codePoint == 0x1FA89 || codePoint == 0x1FA8F ||
-                codePoint == 0x1FADF;
+    //FIXME Minecraft 1.21.1 still uses ICU-73.2, but Unicode 16 CLDR was added in ICU-76;
+    // remove once the bundled ICU data catches up
+    static boolean isEmoji_ModernUnicodeWorkaround(int codePoint) {
+        return codePoint == 0x1F6D8 || codePoint == 0x1F6D9 ||
+                codePoint == 0x1FA89 || codePoint == 0x1FA8A ||
+                codePoint == 0x1FA8B || codePoint == 0x1FA8C ||
+                codePoint == 0x1FA8D || codePoint == 0x1FA8E ||
+                codePoint == 0x1FA8F || codePoint == 0x1FABE ||
+                codePoint == 0x1FAC6 || codePoint == 0x1FAC8 ||
+                codePoint == 0x1FACC || codePoint == 0x1FACD ||
+                codePoint == 0x1FADC || codePoint == 0x1FADD ||
+                codePoint == 0x1FADF || codePoint == 0x1FAE9 ||
+                codePoint == 0x1FAEA || codePoint == 0x1FAEB ||
+                codePoint == 0x1FAEF || codePoint == 0x1FAF9 ||
+                codePoint == 0x1FAFA;
     }
 
     /**
@@ -1353,6 +1364,8 @@ public class FontResourceManager implements PreparableReloadListener {
             c.add(0x1f6d5);
             c.add(0x1f6d6);
             c.add(0x1f6d7);
+            c.add(0x1f6d8);
+            c.add(0x1f6d9);
             c.add(0x1f6dc);
             c.add(0x1f6dd);
             c.add(0x1f6de);
@@ -1654,6 +1667,13 @@ public class FontResourceManager implements PreparableReloadListener {
             c.add(0x1fa86);
             c.add(0x1fa87);
             c.add(0x1fa88);
+            c.add(0x1fa89);
+            c.add(0x1fa8a);
+            c.add(0x1fa8b);
+            c.add(0x1fa8c);
+            c.add(0x1fa8d);
+            c.add(0x1fa8e);
+            c.add(0x1fa8f);
             c.add(0x1fa90);
             c.add(0x1fa91);
             c.add(0x1fa92);
@@ -1700,6 +1720,7 @@ public class FontResourceManager implements PreparableReloadListener {
             c.add(0x1fabb);
             c.add(0x1fabc);
             c.add(0x1fabd);
+            c.add(0x1fabe);
             c.add(0x1fabf);
             c.add(0x1fac0);
             c.add(0x1fac1);
@@ -1707,6 +1728,10 @@ public class FontResourceManager implements PreparableReloadListener {
             c.add(0x1fac3);
             c.add(0x1fac4);
             c.add(0x1fac5);
+            c.add(0x1fac6);
+            c.add(0x1fac8);
+            c.add(0x1facc);
+            c.add(0x1facd);
             c.add(0x1face);
             c.add(0x1facf);
             c.add(0x1fad0);
@@ -1721,6 +1746,9 @@ public class FontResourceManager implements PreparableReloadListener {
             c.add(0x1fad9);
             c.add(0x1fada);
             c.add(0x1fadb);
+            c.add(0x1fadc);
+            c.add(0x1fadd);
+            c.add(0x1fadf);
             c.add(0x1fae0);
             c.add(0x1fae1);
             c.add(0x1fae2);
@@ -1730,6 +1758,10 @@ public class FontResourceManager implements PreparableReloadListener {
             c.add(0x1fae6);
             c.add(0x1fae7);
             c.add(0x1fae8);
+            c.add(0x1fae9);
+            c.add(0x1faea);
+            c.add(0x1faeb);
+            c.add(0x1faef);
             c.add(0x1faf0);
             c.add(0x1faf1);
             c.add(0x1faf2);
@@ -1739,6 +1771,8 @@ public class FontResourceManager implements PreparableReloadListener {
             c.add(0x1faf6);
             c.add(0x1faf7);
             c.add(0x1faf8);
+            c.add(0x1faf9);
+            c.add(0x1fafa);
             c.add(0xe0030);
             c.add(0xe0031);
             c.add(0xe0032);

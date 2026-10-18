@@ -20,7 +20,12 @@ package icyllis.modernui.mc;
 
 import icyllis.arc3d.engine.DriverBugWorkarounds;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.text.FontFamily;
+import icyllis.modernui.graphics.text.FontPaint;
+import icyllis.modernui.graphics.text.OutlineFont;
+import icyllis.modernui.mc.text.*;
+import icyllis.modernui.mc.ui.PreferencesFragment;
 import icyllis.modernui.text.Typeface;
 import icyllis.modernui.view.WindowManager;
 import net.minecraft.client.Minecraft;
@@ -35,7 +40,9 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -86,6 +93,7 @@ public abstract class ModernUIClient extends ModernUI {
     public static volatile float sFontScale = 1;
     public static volatile boolean sUseColorEmoji;
     public static volatile boolean sEmojiShortcodes = true;
+    public static final String VANILLA_FONT_FAMILY = "minecraft:default";
     public static volatile String sFirstFontFamily;
     public static volatile List<? extends String> sFallbackFontFamilyList;
     // font dir/paths to register
@@ -93,6 +101,10 @@ public abstract class ModernUIClient extends ModernUI {
 
     protected volatile Typeface mTypeface;
     protected volatile FontFamily mFirstFontFamily;
+
+    public static boolean isVanillaFontSelected() {
+        return VANILLA_FONT_FAMILY.equals(sFirstFontFamily);
+    }
 
     protected ModernUIClient() {
         super();
@@ -246,42 +258,11 @@ public abstract class ModernUIClient extends ModernUI {
             } catch (IOException e) {
                 LOGGER.error(MARKER, "Failed to open resource pack directory", e);
             }
-            var resources = Minecraft.getInstance().getResourceManager();
-            for (var entry : resources.listResourceStacks("font",
-                    res -> {
-                        if (res.getNamespace().equals(ModernUI.ID)) {
-                            String p = res.getPath();
-                            return p.endsWith(".ttf") ||
-                                    p.endsWith(".otf") ||
-                                    p.endsWith(".ttc") ||
-                                    p.endsWith(".otc");
-                        }
-                        return false;
-                    }).entrySet()) {
-                for (var resource : entry.getValue()) {
-                    tasks.add(CompletableFuture.runAsync(
-                            () -> {
-                                try (var inputStream = resource.open()) {
-                                    FontFamily[] families = FontFamily.createFamilies(
-                                            inputStream, /*register*/true);
-                                    for (var f : families) {
-                                        fontManager.onFontRegistered(f);
-                                        LOGGER.info(MARKER, "Registered font '{}', location '{}' in pack: '{}'",
-                                                f.getFamilyName(), entry.getKey(), resource.sourcePackId());
-                                    }
-                                } catch (Exception e) {
-                                    LOGGER.error(MARKER, "Failed to register font '{}' in pack: '{}'",
-                                            entry.getKey(), resource.sourcePackId(), e);
-                                }
-                            }
-                    ));
-                }
-            }
             CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0])).join();
         }
         boolean success = loadSingleFont(first, selected, firstSetter);
         for (String fallback : fallbacks) {
-            success &= loadSingleFont(fallback, selected, null);
+            success = loadSingleFont(fallback, selected, success ? null : firstSetter) | success;
         }
         if (!success && ModernUIMod.isDeveloperMode()) {
             LOGGER.debug(MARKER, "Available system font families:\n{}",
@@ -294,6 +275,26 @@ public abstract class ModernUIClient extends ModernUI {
                                           @Nullable Consumer<FontFamily> firstSetter) {
         if (StringUtils.isEmpty(value)) {
             return true;
+        }
+        if (VANILLA_FONT_FAMILY.equals(value)) {
+            if (FontResourceManager.getInstance() instanceof TextLayoutEngine engine) {
+                FontFamily[] families = engine.getVanillaTypefaceFamilies();
+                if (families != null) {
+                    for (FontFamily family : families) {
+                        if (family.getClosestMatch(FontPaint.NORMAL) instanceof OutlineFont) {
+                            selected.add(family);
+                            if (firstSetter != null) {
+                                firstSetter.accept(family);
+                            }
+                            LOGGER.debug(MARKER, "Font '{}' was loaded as VANILLA FONT", value);
+                            return true;
+                        }
+                    }
+                }
+            }
+            LOGGER.debug(MARKER, "No outline family in vanilla fonts, " +
+                    "fall back to other families for Modern UI screens");
+            return false;
         }
         try {
             File f = new File(value.replaceAll("\\\\", "/"));
@@ -325,7 +326,6 @@ public abstract class ModernUIClient extends ModernUI {
             }
             return true;
         }
-        LOGGER.info(MARKER, "Font '{}' failed to load or invalid", value);
         return false;
     }
 
@@ -410,6 +410,48 @@ public abstract class ModernUIClient extends ModernUI {
 
     protected void setFirstFontFamily(FontFamily firstFontFamily) {
         mFirstFontFamily = firstFontFamily;
+    }
+
+    public void onTypefaceReplaced(@Nullable Typeface oldTypeface) {
+        if (oldTypeface == null || oldTypeface == mTypeface) {
+            return;
+        }
+        Typeface newTypeface = mTypeface;
+        Set<FontFamily> keep = Collections.newSetFromMap(new IdentityHashMap<>());
+        if (newTypeface != null) {
+            keep.addAll(newTypeface.getFamilies());
+        }
+        var resourceManager = FontResourceManager.getInstance();
+        List<BitmapFont> closable = new ArrayList<>();
+        for (var family : oldTypeface.getFamilies()) {
+            if (keep.contains(family)) {
+                continue;
+            }
+            if (family.getClosestMatch(FontPaint.NORMAL) instanceof BitmapFont bitmapFont) {
+                if (resourceManager instanceof TextLayoutEngine engine) {
+                    if (engine.isFamilyInUse(family)) {
+                        continue; // still used by the layout engine
+                    }
+                }
+                closable.add(bitmapFont);
+            }
+        }
+        Typeface old = oldTypeface;
+        Runnable task = () -> {
+            try {
+                PreferencesFragment.refreshViewTypeface(
+                        UIManager.getInstance().getDecorView(), old);
+            } catch (Throwable ignored) {
+            }
+            for (var bitmapFont : closable) {
+                bitmapFont.close();
+            }
+        };
+        try {
+            Core.getUiThreadExecutor().execute(task);
+        } catch (Throwable ignored) {
+            task.run();
+        }
     }
 
     @Override

@@ -136,7 +136,7 @@ public class BitmapFont implements Font, AutoCloseable {
                 // do not use Math.round() as results are different for negative values
                 Glyph glyph = new Glyph((int) (0.5 + actualWidth * mScaleFactor) + 1,
                         c * mSpriteWidth, r * mSpriteHeight,
-                        actualWidth <= 0);
+                        actualWidth <= 0, getShadowOffset(), getBoldOffset());
                 if (mGlyphs.put(ch, glyph) != null) {
                     LOGGER.warn(GlyphManager.MARKER, "Codepoint '{}' declared multiple times in {}",
                             Integer.toHexString(ch), mName);
@@ -159,6 +159,25 @@ public class BitmapFont implements Font, AutoCloseable {
             mBitmap.close();
             mBitmap = null;
             mBakedGlyphs = null;
+        }
+    }
+
+    protected BitmapFont(@Nonnull ResourceLocation name, int[][] grid,
+                         int height, int ascent, int spriteWidth, int spriteHeight) {
+        mName = name;
+        mBitmap = null;
+        mAscent = ascent;
+        mDescent = height - ascent;
+        mSpriteWidth = spriteWidth;
+        mSpriteHeight = spriteHeight;
+        mScaleFactor = (float) height / spriteHeight;
+        mCodepointGrid = grid;
+    }
+
+    protected final void putGlyph(int ch, @Nonnull Glyph glyph) {
+        if (mGlyphs.put(ch, glyph) != null) {
+            LOGGER.warn(GlyphManager.MARKER, "Codepoint '{}' declared multiple times in {}",
+                    Integer.toHexString(ch), mName);
         }
     }
 
@@ -401,6 +420,14 @@ public class BitmapFont implements Font, AutoCloseable {
         return mGlyphs.containsKey(ch);
     }
 
+    public float getShadowOffset() {
+        return 1.0f;
+    }
+
+    public float getBoldOffset() {
+        return 1.0f;
+    }
+
     @Override
     public float doSimpleLayout(char[] buf, int start, int limit,
                                 FontPaint paint, IntArrayList glyphs,
@@ -516,17 +543,32 @@ public class BitmapFont implements Font, AutoCloseable {
          * True if the glyph is fully transparent.
          */
         public final boolean isEmpty;
+        public final float shadowOffset;
+        public final float boldOffset;
 
-        public Glyph(int advance, int offsetX, int offsetY, boolean isEmpty) {
+        public Glyph(int advance, int offsetX, int offsetY, boolean isEmpty,
+                     float shadowOffset, float boldOffset) {
             this.advance = advance;
             this.offsetX = (short) offsetX;
             this.offsetY = (short) offsetY;
             this.isEmpty = isEmpty;
+            this.shadowOffset = shadowOffset;
+            this.boldOffset = boldOffset;
         }
 
         @Override
         public float getAdvance() {
             return advance;
+        }
+
+        @Override
+        public float getShadowOffset() {
+            return shadowOffset;
+        }
+
+        @Override
+        public float getBoldOffset() {
+            return boldOffset;
         }
 
         @Nonnull

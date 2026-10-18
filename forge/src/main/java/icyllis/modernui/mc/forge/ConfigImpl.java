@@ -522,11 +522,13 @@ public final class ConfigImpl {
             builder.comment("Font Config")
                     .push("font");
 
-            // Segoe UI, Source Han Sans CN Medium, Noto Sans, Open Sans, San Francisco, Calibri,
+            // Segoe UI, Noto Sans, Open Sans, San Francisco, Calibri,
             // Microsoft YaHei UI, STHeiti, SimHei, SansSerif
             mFirstFontFamily = builder.comment(
-                            "The first font family to use. See fallbackFontFamilyList")
-                    .define("firstFontFamily", "Inter Frozen Medium");
+                            "The first font family to use. See fallbackFontFamilyList.",
+                            "The special value \"minecraft:default\" uses Minecraft's " +
+                                    "built-in fonts (bitmap providers and unifont).")
+                    .define("firstFontFamily", ModernUIClient.VANILLA_FONT_FAMILY);
             mFallbackFontFamilyList = builder.comment(
                             "A set of fallback font families to determine the typeface to use.",
                             "The order is first > fallbacks. TrueType & OpenType are supported.",
@@ -537,13 +539,11 @@ public final class ConfigImpl {
                             "1) OS builtin fonts.",
                             "2) Font files in fontRegistrationList.",
                             "3) Font files in '/resourcepacks' directory.",
-                            "4) Font files under 'modernui:font' in resource packs.",
                             "Note that for TTC/OTC font, you should register it and select one of font families.",
                             "Otherwise, only the first font family from the TrueType/OpenType Collection will be used.",
                             "This is only read once when the game is loaded, you can reload via in-game GUI.")
                     .defineList("fallbackFontFamilyList", () -> {
                         List<String> list = new ArrayList<>();
-                        list.add("Source Han Sans CN Medium");
                         list.add("Noto Sans");
                         list.add("Segoe UI Variable");
                         list.add("Segoe UI");
@@ -552,7 +552,6 @@ public final class ConfigImpl {
                         list.add("SimHei");
                         list.add("STHeiti");
                         list.add("Segoe UI Symbol");
-                        list.add("mui-i18n-compat");
                         return list;
                     }, s -> true);
             mFontRegistrationList = builder.comment(
@@ -776,18 +775,7 @@ public final class ConfigImpl {
                             "For TTF providers, this is the TTF file path without 'font/'.",
                             "For space providers, this is \"font_name / minecraft:space\",",
                             "where font_name is font definition path without 'font/'.")
-                    .defineList("defaultFontRuleSet", () -> {
-                        List<String> rules = new ArrayList<>();
-                        // three vanilla fonts
-                        rules.add("^minecraft:font\\/(nonlatin_european|accented|ascii|" +
-                                // four added by CFPA Minecraft-Mod-Language-Package
-                                "element_ideographs|cjk_punctuations|ellipsis|2em_dash)\\.png$");
-                        // the vanilla space
-                        rules.add("^minecraft:include\\/space \\/ minecraft:space$");
-                        // CozyUI by 05
-                        rules.add("^minecraft:font\\/(mcsans|emoji)_05_00\\d.png$");
-                        return rules;
-                    }, s -> true);
+                    .defineList("defaultFontRuleSet", () -> List.of(), s -> true);
             mUseComponentCache = builder.comment(
                             "Whether to use text component object as hash key to lookup in layout cache.",
                             "If you find that Modern UI text rendering is not compatible with some mods,",

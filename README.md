@@ -65,8 +65,7 @@ If you have any questions, feel free to join our [Discord](https://discord.gg/km
   - Copyright (C) 2019-2024 BloCamLimb et al.
   - [![License](https://img.shields.io/badge/License-LGPL--3.0--or--later-blue.svg?style=flat-square)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
 * Additional Assets
-  - [source-han-sans](https://github.com/adobe-fonts/source-han-sans) by Adobe, licensed under the OFL-1.1
-  - [jetbrains-mono](https://www.jetbrains.com/lp/mono/) by JetBrains, licensed under the OFL-1.1
+  - [noto-emoji](https://github.com/googlefonts/noto-emoji) by Google, licensed under the OFL-1.1
 
 #### Gradle configuration
 ```

@@ -21,7 +21,9 @@ package icyllis.modernui.mc.text;
 import com.mojang.blaze3d.font.GlyphInfo;
 import com.mojang.blaze3d.font.SheetGlyphInfo;
 import icyllis.modernui.graphics.text.*;
+import icyllis.modernui.mc.FontResourceManager;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.font.*;
 import net.minecraft.client.gui.font.glyphs.*;
 import net.minecraft.client.renderer.RenderType;
@@ -57,6 +59,8 @@ public class StandardFontSet extends FontSet {
     @Unmodifiable
     private List<FontFamily> mFamilies = Collections.emptyList();
 
+    private final ResourceLocation mFontName;
+
     private CodepointMap<BakedGlyph> mGlyphs;
 
     private final IntFunction<BakedGlyph> mCacheGlyph = this::cacheGlyph;
@@ -72,6 +76,7 @@ public class StandardFontSet extends FontSet {
                            @Nonnull ResourceLocation fontName) {
         super(texMgr, fontName); // <- unused
 
+        mFontName = fontName;
         mStandardPaint.setFontStyle(FontPaint.NORMAL);
         mStandardPaint.setLocale(Locale.ROOT);
     }
@@ -80,6 +85,15 @@ public class StandardFontSet extends FontSet {
         super.reload(Collections.emptyList(), Collections.emptySet());
         mFamilies = fontCollection.getFamilies();
         invalidateCache(newResLevel);
+    }
+
+    @Override
+    public void reload(@Nonnull Set<FontOption> options) {
+        super.reload(options);
+        if (mFontName.equals(Minecraft.DEFAULT_FONT) &&
+                FontResourceManager.getInstance() instanceof TextLayoutEngine engine) {
+            engine.onFontOptionsChanged();
+        }
     }
 
     public void invalidateCache(int newResLevel) {

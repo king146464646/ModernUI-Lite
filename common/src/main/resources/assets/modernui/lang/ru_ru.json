@@ -112,6 +112,7 @@
   "modernui.center.text.cacheLifespan": "Layout Cache Lifespan",
   "modernui.center.text.rehashThreshold": "Cache Rehash Threshold",
   "modernui.center.font.firstFont": "Preferred Font Family",
+  "modernui.center.font.defaultFont": "По умолчанию",
   "modernui.center.font.chooseFont": "Choose a Font…",
   "modernui.center.font.openFontFile": "Open a Font File",
   "modernui.center.font.fallbackFonts": "Fallback Font Family List",

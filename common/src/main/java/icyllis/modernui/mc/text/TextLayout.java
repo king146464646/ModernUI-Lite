@@ -402,10 +402,12 @@ public class TextLayout {
             }
             if ((bits & CharacterStyle.ANY_BITMAP_REPLACEMENT) != 0) {
                 final float scaleFactor;
+                float fontShadowOffset = 1.0f;
                 if (getFont(i) instanceof BitmapFont bitmapFont) {
                     texture = GlyphManager.getInstance().getCurrentTexture(bitmapFont);
                     ascent = bitmapFont.getAscent();
                     scaleFactor = 1f / TextLayoutEngine.BITMAP_SCALE;
+                    fontShadowOffset = bitmapFont.getShadowOffset();
                     isBitmapFont = true;
                 } else {
                     if (isShadow) {
@@ -420,9 +422,9 @@ public class TextLayout {
                 rx = x + positions[i << 1] + glyph.x * scaleFactor;
                 ry = baseline + positions[i << 1 | 1] + glyph.y * scaleFactor;
                 if (isShadow) {
-                    // bitmap font shadow offset is always 1 pixel
-                    rx += 1.0f - shadowOffset;
-                    ry += 1.0f - shadowOffset;
+                    // use 1.0 pixel, UnihexProvider (unifont) glyphs use 0.5 pixel;
+                    rx += fontShadowOffset - shadowOffset;
+                    ry += fontShadowOffset - shadowOffset;
                 }
 
                 w = glyph.width * scaleFactor;

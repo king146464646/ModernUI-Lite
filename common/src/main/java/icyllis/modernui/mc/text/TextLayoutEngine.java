@@ -36,6 +36,7 @@ import icyllis.modernui.util.Pools;
 import icyllis.modernui.view.View;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.font.FontManager;
+import net.minecraft.client.gui.font.FontOption;
 import net.minecraft.client.gui.font.FontSet;
 import net.minecraft.client.gui.font.providers.*;
 import net.minecraft.network.chat.*;
@@ -124,9 +125,9 @@ public class TextLayoutEngine extends FontResourceManager
     public static final ResourceLocation SERIF = ModernUIMod.location("serif");
     public static final ResourceLocation MONOSPACED = ModernUIMod.location("monospace"); // no -d
     /**
-     * We never load Unicode fonts, they will be ModernUI default typeface list and can be
-     * dynamically reloaded. However, if other fonts contain UNIHEX or refer to Unicode fonts,
-     * we use this placeholder and redirect it to the <em>current</em> ModernUI default typeface list.
+     * If a font contains an UNIHEX provider whose hex file is missing or malformed,
+     * or refers to a font that can't be resolved, we use this placeholder and redirect
+     * it to the <em>current</em> ModernUI default typeface list.
      */
     private static final ResourceLocation INTERNAL_DEFAULT = ModernUIMod.location("internal-default");
 
@@ -267,7 +268,13 @@ public class TextLayoutEngine extends FontResourceManager
      */
     private final HashMap<ResourceLocation, FontCollection> mFontCollections = new HashMap<>();
 
-    private FontCollection mRawDefaultFontCollection;
+    private volatile FontCollection mRawDefaultFontCollection;
+
+    private volatile Map<FontFamily, FontOption.Filter> mFamilyFilters = Map.of();
+
+    private volatile List<FontFamily> mVanillaFamilies = List.of();
+
+    private volatile Set<FontOption> mLastFontOptions = Set.of();
 
     private final ConcurrentHashMap<ResourceLocation, FontCollection> mRegisteredFonts = new ConcurrentHashMap<>();
 
@@ -427,6 +434,7 @@ public class TextLayoutEngine extends FontResourceManager
 
     private void internalReload(int scale) {
         clear();
+        mLastFontOptions = currentFontOptions();
 
         final int oldLevel = mResLevel;
         if (sFixedResolution) {
@@ -478,9 +486,32 @@ public class TextLayoutEngine extends FontResourceManager
         } else {
             LinkedHashSet<FontFamily> defaultFonts = new LinkedHashSet<>();
             populateDefaultFonts(defaultFonts, sDefaultFontBehavior);
-            defaultFonts.addAll(ModernUI.getSelectedTypeface().getFamilies());
-            mFontCollections.put(Minecraft.DEFAULT_FONT,
-                    new FontCollection(defaultFonts.toArray(new FontFamily[0])));
+            LinkedHashSet<FontFamily> unicodeFonts = new LinkedHashSet<>();
+            var iterator = defaultFonts.iterator();
+            while (iterator.hasNext()) {
+                FontFamily family = iterator.next();
+                if (family.getClosestMatch(FontPaint.NORMAL) instanceof UnifontFont) {
+                    iterator.remove();
+                    unicodeFonts.add(family);
+                }
+            }
+            LinkedHashSet<FontFamily> composed = new LinkedHashSet<>();
+            if (!ModernUIClient.isVanillaFontSelected()) {
+                composed.addAll(ModernUI.getSelectedTypeface().getFamilies());
+            } else if (ModernUIClient.sUseColorEmoji) {
+                var emojiFont = getEmojiFont();
+                if (emojiFont != null) {
+                    composed.add(new FontFamily(emojiFont));
+                }
+            }
+            composed.addAll(defaultFonts);
+            composed.addAll(unicodeFonts);
+            if (composed.isEmpty()) {
+                mFontCollections.put(Minecraft.DEFAULT_FONT, ModernUI.getSelectedTypeface());
+            } else {
+                mFontCollections.put(Minecraft.DEFAULT_FONT,
+                        new FontCollection(composed.toArray(new FontFamily[0])));
+            }
         }
 
         if (mVanillaFontManager != null) {
@@ -560,6 +591,8 @@ public class TextLayoutEngine extends FontResourceManager
         if (mRawDefaultFontCollection == null) {
             return;
         }
+        final var filters = mFamilyFilters;
+        final var options = currentFontOptions();
         if (behavior == DEFAULT_FONT_BEHAVIOR_ONLY_INCLUDE ||
                 behavior == DEFAULT_FONT_BEHAVIOR_ONLY_EXCLUDE) {
             Pattern pattern = null;
@@ -575,6 +608,9 @@ public class TextLayoutEngine extends FontResourceManager
             }
             boolean exclusive = behavior == DEFAULT_FONT_BEHAVIOR_ONLY_EXCLUDE;
             for (FontFamily family : mRawDefaultFontCollection.getFamilies()) {
+                if (!isFamilyEnabled(family, filters, options)) {
+                    continue;
+                }
                 String name = family.getFamilyName();
                 boolean matches = pattern != null && pattern.matcher(name).matches();
                 // difference set
@@ -585,6 +621,9 @@ public class TextLayoutEngine extends FontResourceManager
         } else {
             // legacy matching, exclude vanilla fonts
             for (FontFamily family : mRawDefaultFontCollection.getFamilies()) {
+                if (!isFamilyEnabled(family, filters, options)) {
+                    continue;
+                }
                 switch (family.getFamilyName()) {
                     case "minecraft:font/nonlatin_european.png",
                          "minecraft:font/accented.png",
@@ -602,6 +641,91 @@ public class TextLayoutEngine extends FontResourceManager
                 }
             }
         }
+    }
+
+    private static boolean isFamilyEnabled(@Nonnull FontFamily family,
+                                           @Nonnull Map<FontFamily, FontOption.Filter> filters,
+                                           @Nonnull Set<FontOption> options) {
+        FontOption.Filter filter = filters.get(family);
+        return filter == null || filter.apply(options);
+    }
+
+    @Nonnull
+    private static Set<FontOption> currentFontOptions() {
+        EnumSet<FontOption> options = EnumSet.noneOf(FontOption.class);
+        var opts = Minecraft.getInstance().options;
+        if (opts != null) { // this can be null on Fabric, because this class loads too early
+            if (opts.forceUnicodeFont().get()) {
+                options.add(FontOption.UNIFORM);
+            }
+            if (opts.japaneseGlyphVariants().get()) {
+                options.add(FontOption.JAPANESE_VARIANTS);
+            }
+        }
+        return options;
+    }
+
+    @Nullable
+    public FontFamily[] getVanillaTypefaceFamilies() {
+        var list = mVanillaFamilies;
+        if (list.isEmpty()) {
+            return null;
+        }
+        var filters = mFamilyFilters;
+        var options = currentFontOptions();
+        var result = new ArrayList<FontFamily>(list.size());
+        for (var family : list) {
+            if (isFamilyEnabled(family, filters, options)) {
+                result.add(family);
+            }
+        }
+        return result.toArray(new FontFamily[0]);
+    }
+
+    public boolean isFamilyInUse(@Nonnull FontFamily family) {
+        if (containsIdentity(mRawDefaultFontCollection, family)) {
+            return true;
+        }
+        for (var fontCollection : mFontCollections.values()) {
+            if (containsIdentity(fontCollection, family)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean containsIdentity(@Nullable FontCollection fontCollection,
+                                            @Nonnull FontFamily family) {
+        if (fontCollection == null) {
+            return false;
+        }
+        for (var f : fontCollection.getFamilies()) {
+            if (f == family) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void onFontOptionsChanged() {
+        if (mRawDefaultFontCollection == null) {
+            return;
+        }
+        Set<FontOption> options = currentFontOptions();
+        if (options.equals(mLastFontOptions)) {
+            return;
+        }
+        Minecraft.getInstance().submit(() -> {
+            if (options.equals(mLastFontOptions)) {
+                return; // already recomposed
+            }
+            if (ModernUIClient.isVanillaFontSelected()) {
+                Typeface oldTypeface = ModernUI.getSelectedTypeface();
+                ModernUIClient.getInstance().reloadTypeface();
+                ModernUIClient.getInstance().onTypefaceReplaced(oldTypeface);
+            }
+            reload();
+        });
     }
 
     /**
@@ -630,6 +754,8 @@ public class TextLayoutEngine extends FontResourceManager
 
     private static final class LoadResults extends FontResourceManager.LoadResults {
         volatile Map<ResourceLocation, FontCollection> mFontCollections;
+        volatile Map<FontFamily, FontOption.Filter> mFamilyFilters;
+        volatile List<FontFamily> mVanillaFamilies;
     }
 
     // ASYNC
@@ -667,6 +793,8 @@ public class TextLayoutEngine extends FontResourceManager
         mFontCollections.putAll(mRegisteredFonts);
         mFontCollections.putAll(results.mFontCollections);
         mRawDefaultFontCollection = mFontCollections.get(Minecraft.DEFAULT_FONT);
+        mFamilyFilters = results.mFamilyFilters != null ? results.mFamilyFilters : Map.of();
+        mVanillaFamilies = results.mVanillaFamilies != null ? results.mVanillaFamilies : List.of();
         // vanilla compatibility
         if (mVanillaFontManager != null) {
             var fontSets = ((AccessFontManager) mVanillaFontManager).getFontSets();
@@ -697,9 +825,17 @@ public class TextLayoutEngine extends FontResourceManager
     }
 
     private void closeFonts() {
+        Set<FontFamily> keep = Collections.newSetFromMap(new IdentityHashMap<>());
+        Typeface current = ModernUI.getSelectedTypeface();
+        if (current != null) {
+            keep.addAll(current.getFamilies());
+        }
         // close bitmaps if never baked
         for (var fontCollection : mFontCollections.values()) {
             for (var family : fontCollection.getFamilies()) {
+                if (keep.contains(family)) {
+                    continue;
+                }
                 if (family.getClosestMatch(FontPaint.NORMAL) instanceof BitmapFont bitmapFont) {
                     bitmapFont.close();
                 }
@@ -707,6 +843,9 @@ public class TextLayoutEngine extends FontResourceManager
         }
         if (mRawDefaultFontCollection != null) {
             for (var family : mRawDefaultFontCollection.getFamilies()) {
+                if (keep.contains(family)) {
+                    continue;
+                }
                 if (family.getClosestMatch(FontPaint.NORMAL) instanceof BitmapFont bitmapFont) {
                     bitmapFont.close();
                 }
@@ -731,25 +870,16 @@ public class TextLayoutEngine extends FontResourceManager
         }
     }
 
-    private static boolean isUnicodeFont(@Nonnull ResourceLocation name) {
-        if (name.equals(Minecraft.UNIFORM_FONT)) {
-            return true;
-        }
-        if (name.getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE)) {
-            return name.getPath().equals("include/unifont");
-        }
-        return false;
-    }
-
     private static final class RawFontBundle
             implements DependencySorter.Entry<ResourceLocation> {
         final ResourceLocation name;
         /**
-         * We load font families other than {@link #isUnicodeFont(ResourceLocation)}.
+         * Font families to use, in provider order, each with the font option filter
+         * declared by its glyph provider.
          * <p>
-         * Either FontFamily or ResourceLocation (reference).
+         * Key is either FontFamily or ResourceLocation (reference).
          */
-        Set<Object> families = new LinkedHashSet<>();
+        Map<Object, FontOption.Filter> families = new LinkedHashMap<>();
         /**
          * References to other fonts.
          */
@@ -782,9 +912,6 @@ public class TextLayoutEngine extends FontResourceManager
             var path = location.getPath();
             // remove prefix 'font/' and extension '.json' to get the font name
             var name = location.withPath(path.substring(5, path.length() - 5));
-            if (isUnicodeFont(name)) {
-                continue;
-            }
             var bundle = new RawFontBundle(name);
             bundles.add(bundle);
             for (var resource : entry.getValue()) {
@@ -794,12 +921,12 @@ public class TextLayoutEngine extends FontResourceManager
                     for (int i = 0; i < providers.size(); i++) {
                         var metadata = GsonHelper.convertToJsonObject(
                                 providers.get(i), "providers[" + i + "]");
-                        var definition = GlyphProviderDefinition.Conditional.CODEC
+                        var conditional = GlyphProviderDefinition.Conditional.CODEC
                                 .parse(JsonOps.INSTANCE, metadata)
-                                .getOrThrow(JsonParseException::new)
-                                .definition();
+                                .getOrThrow(JsonParseException::new);
                         loadSingleFont(resources, name, bundle,
-                                resource.sourcePackId(), i, metadata, definition);
+                                resource.sourcePackId(), i, metadata,
+                                conditional.definition(), conditional.filter());
                     }
                     LOGGER.info(MARKER, "Loaded raw font '{}' in pack: '{}'",
                             name, resource.sourcePackId());
@@ -809,7 +936,7 @@ public class TextLayoutEngine extends FontResourceManager
                 }
             }
             LOGGER.info(MARKER, "Loaded raw font bundle: '{}', font set: [{}]", location,
-                    bundle.families.stream().map(object -> {
+                    bundle.families.keySet().stream().map(object -> {
                                 if (object instanceof FontFamily family) {
                                     return family.getFamilyName();
                                 }
@@ -823,19 +950,29 @@ public class TextLayoutEngine extends FontResourceManager
         }
         final var map = new HashMap<ResourceLocation, FontCollection>();
         map.put(INTERNAL_DEFAULT, ModernUI.getSelectedTypeface());
+        final var filters = new HashMap<FontFamily, FontOption.Filter>();
+        final var realFamilies = new HashMap<ResourceLocation, Set<FontFamily>>();
         sorter.orderByDependencies((name, bundle) -> {
-            if (isUnicodeFont(name)) {
-                return;
-            }
             var set = new LinkedHashSet<FontFamily>();
-            for (var object : bundle.families) {
-                if (object instanceof FontFamily family) {
+            var real = new LinkedHashSet<FontFamily>();
+            for (var e : bundle.families.entrySet()) {
+                var filter = e.getValue();
+                if (e.getKey() instanceof FontFamily family) {
                     set.add(family);
+                    real.add(family);
+                    filters.merge(family, filter, (old, neu) -> neu.merge(old));
                 } else {
-                    var reference = (ResourceLocation) object;
+                    var reference = (ResourceLocation) e.getKey();
                     FontCollection resolved = map.get(reference);
                     if (resolved != null) {
-                        set.addAll(resolved.getFamilies());
+                        for (var family : resolved.getFamilies()) {
+                            set.add(family);
+                            filters.merge(family, filter, (old, neu) -> neu.merge(old));
+                        }
+                        var resolvedReal = realFamilies.get(reference);
+                        if (resolvedReal != null) {
+                            real.addAll(resolvedReal);
+                        }
                     } else {
                         LOGGER.warn(MARKER, "Failed to resolve font: {}", reference);
                     }
@@ -843,6 +980,7 @@ public class TextLayoutEngine extends FontResourceManager
             }
             if (!set.isEmpty()) {
                 map.put(name, new FontCollection(set.toArray(new FontFamily[0])));
+                realFamilies.put(name, real);
                 LOGGER.info(MARKER, "Loaded font: '{}', font set: [{}]", name,
                         set.stream().map(FontFamily::getFamilyName).collect(Collectors.joining(",")));
             } else {
@@ -851,6 +989,9 @@ public class TextLayoutEngine extends FontResourceManager
         });
         map.remove(INTERNAL_DEFAULT);
         results.mFontCollections = map;
+        results.mFamilyFilters = filters;
+        var vanilla = realFamilies.get(Minecraft.DEFAULT_FONT);
+        results.mVanillaFamilies = vanilla != null ? List.copyOf(vanilla) : List.of();
     }
 
     private static void loadSingleFont(@Nonnull ResourceManager resources,
@@ -858,12 +999,14 @@ public class TextLayoutEngine extends FontResourceManager
                                        RawFontBundle bundle,
                                        String sourcePackId, int index,
                                        JsonObject metadata,
-                                       @Nonnull GlyphProviderDefinition definition) {
+                                       @Nonnull GlyphProviderDefinition definition,
+                                       @Nonnull FontOption.Filter filter) {
         switch (definition.type()) {
             case BITMAP -> {
                 var bitmapFont = BitmapFont.create((BitmapProvider.Definition) definition, resources);
-                bundle.families.add(
-                        new FontFamily(bitmapFont)
+                bundle.families.put(
+                        new FontFamily(bitmapFont),
+                        filter
                 );
             }
             case TTF -> {
@@ -884,27 +1027,42 @@ public class TextLayoutEngine extends FontResourceManager
                     LOGGER.info(MARKER, "Ignore 'skip={}' of providers[{}] in font '{}' in pack: '{}'",
                             ttf.skip(), index, name, sourcePackId);
                 }
-                bundle.families.add(
-                        createTTF(ttf.location(), resources)
+                bundle.families.put(
+                        createTTF(ttf.location(), resources),
+                        filter
                 );
             }
             case SPACE -> {
                 var spaceFont = SpaceFont.create(name, (SpaceProvider.Definition) definition);
-                bundle.families.add(
-                        new FontFamily(spaceFont)
+                bundle.families.put(
+                        new FontFamily(spaceFont),
+                        filter
                 );
             }
             case UNIHEX -> {
-                bundle.families.add(INTERNAL_DEFAULT);
+                var hexFile = metadata.get("hex_file");
+                var location = hexFile != null ? ResourceLocation.tryParse(hexFile.getAsString()) : null;
+                if (location != null) {
+                    try {
+                        bundle.families.put(
+                                new FontFamily(UnifontFont.create(location, metadata, resources)),
+                                filter
+                        );
+                        return;
+                    } catch (Exception e) {
+                        LOGGER.warn(MARKER, "Failed to load unifont '{}' of providers[{}] " +
+                                "in font '{}' in pack: '{}'", location, index, name, sourcePackId, e);
+                    }
+                } else {
+                    LOGGER.warn(MARKER, "Illegal 'hex_file' of providers[{}] in font '{}' in pack: '{}'",
+                            index, name, sourcePackId);
+                }
+                bundle.families.put(INTERNAL_DEFAULT, filter);
             }
             case REFERENCE -> {
                 ResourceLocation reference = ((ProviderReferenceDefinition) definition).id();
-                if (!isUnicodeFont(reference)) {
-                    bundle.families.add(reference);
-                    bundle.dependencies.add(reference);
-                } else if (!name.equals(Minecraft.DEFAULT_FONT)) {
-                    bundle.families.add(INTERNAL_DEFAULT);
-                }
+                bundle.families.put(reference, filter);
+                bundle.dependencies.add(reference);
             }
             default -> LOGGER.info(MARKER, "Unknown provider type '{}' in font '{}' in pack: '{}'",
                     definition.type(), name, sourcePackId);
@@ -1222,10 +1380,6 @@ public class TextLayoutEngine extends FontResourceManager
      */
     @Nonnull
     public FontCollection getFontCollection(@Nonnull ResourceLocation fontName) {
-        if (mForceUnicodeFont == Boolean.TRUE &&
-                fontName.equals(Minecraft.DEFAULT_FONT)) {
-            fontName = Minecraft.UNIFORM_FONT;
-        }
         FontCollection fontCollection;
         return (fontCollection = mFontCollections.get(fontName)) != null
                 ? fontCollection

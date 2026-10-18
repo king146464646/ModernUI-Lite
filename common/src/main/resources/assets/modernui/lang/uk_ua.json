@@ -112,6 +112,7 @@
   "modernui.center.text.cacheLifespan": "Тривалість життя кешу компонування",
   "modernui.center.text.rehashThreshold": "Поріг рехешування кешу",
   "modernui.center.font.firstFont": "Переважний шрифт",
+  "modernui.center.font.defaultFont": "Типовий",
   "modernui.center.font.chooseFont": "Виберіть шрифт…",
   "modernui.center.font.openFontFile": "Відкрити файл шрифту",
   "modernui.center.font.fallbackFonts": "Список шрифтів заміни",

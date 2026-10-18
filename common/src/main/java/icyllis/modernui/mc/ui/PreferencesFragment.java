@@ -394,6 +394,10 @@ public class PreferencesFragment extends Fragment {
             {
                 TextView value = new TextView(context);
                 onFontChanged = () -> {
+                    if (ModernUIClient.isVanillaFontSelected()) {
+                        value.setText(I18n.get("modernui.center.font.defaultFont"));
+                        return;
+                    }
                     FontFamily first = ModernUIClient.getInstance().getFirstFontFamily();
                     if (first != null) {
                         value.setText(first.getFamilyName(value.getTextLocale()));
@@ -1788,8 +1792,8 @@ public class PreferencesFragment extends Fragment {
         }, Core.getUiThreadExecutor());
     }
 
-    private static void refreshViewTypeface(@NonNull ViewGroup vg,
-                                            Typeface oldTypeface) {
+    public static void refreshViewTypeface(@NonNull ViewGroup vg,
+                                           Typeface oldTypeface) {
         int cc = vg.getChildCount();
         for (int i = 0; i < cc; i++) {
             View v = vg.getChildAt(i);

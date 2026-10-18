@@ -90,7 +90,7 @@ public class PreferredFontAccordion implements View.OnClickListener,
         {
             var layout = createRowLayout(context, "gui.modernui.configValue");
             var input = mInput = new EditText(context, null, R.attr.editTextOutlinedStyle);
-            input.setText(Config.CLIENT.mFirstFontFamily.get());
+            input.setText(toDisplayValue(Config.CLIENT.mFirstFontFamily.get()));
             input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
             input.setMinimumWidth(input.dp(100));
             input.setOnFocusChangeListener(this);
@@ -116,6 +116,8 @@ public class PreferredFontAccordion implements View.OnClickListener,
                 values.add(0, new FontFamilyItem("\u2026", "\u2026"));
                 return values;
             }).thenAcceptAsync(values -> {
+                values.add(1, new FontFamilyItem(ModernUIClient.VANILLA_FONT_FAMILY,
+                        I18n.get("modernui.center.font.defaultFont")));
                 mSpinner.setAdapter(mAdapter = new ArrayAdapter<>(mParent.getContext(), values));
                 mSpinner.setOnItemSelectedListener(this);
                 updateSpinnerSelection();
@@ -199,7 +201,7 @@ public class PreferredFontAccordion implements View.OnClickListener,
         if (v == mInput) {
             if (!hasFocus) {
                 EditText v1 = (EditText) v;
-                String newValue = v1.getText().toString().strip();
+                String newValue = toConfigValue(v1.getText().toString());
                 applyNewValue(v1.getContext(), newValue, () -> {
                     mOnFontChanged.run();
                     updateSpinnerSelection();
@@ -216,7 +218,7 @@ public class PreferredFontAccordion implements View.OnClickListener,
         String newValue = mAdapter.getItem(position).rootName;
         boolean changed = applyNewValue(view.getContext(), newValue, mOnFontChanged);
         if (changed) {
-            mInput.setText(newValue);
+            mInput.setText(toDisplayValue(newValue));
         }
     }
 
@@ -239,7 +241,7 @@ public class PreferredFontAccordion implements View.OnClickListener,
                 updateSpinnerSelection();
             });
             if (changed) {
-                mInput.setText(newValue);
+                mInput.setText(toDisplayValue(newValue));
             }
 
             return true;
@@ -248,6 +250,17 @@ public class PreferredFontAccordion implements View.OnClickListener,
     }
 
     private void updateSpinnerSelection() {
+        if (mAdapter == null || mSpinner == null) {
+            return;
+        }
+        if (ModernUIClient.VANILLA_FONT_FAMILY.equals(Config.CLIENT.mFirstFontFamily.get())) {
+            for (int i = 1; i < mAdapter.getCount(); i++) {
+                if (ModernUIClient.VANILLA_FONT_FAMILY.equals(mAdapter.getItem(i).rootName)) {
+                    mSpinner.setSelection(i);
+                    return;
+                }
+            }
+        }
         FontFamily first = ModernUIClient.getInstance().getFirstFontFamily();
         if (first != null) {
             String firstName = first.getFamilyName();
@@ -260,6 +273,25 @@ public class PreferredFontAccordion implements View.OnClickListener,
             }
         }
         mSpinner.setSelection(0);
+    }
+
+    private static String toDisplayValue(String configValue) {
+        if (ModernUIClient.VANILLA_FONT_FAMILY.equals(configValue)) {
+            return I18n.get("modernui.center.font.defaultFont");
+        }
+        return configValue;
+    }
+
+    private static String toConfigValue(String text) {
+        String stripped = text.strip();
+        if (stripped.isEmpty()) {
+            return "";
+        }
+        if (stripped.equals(ModernUIClient.VANILLA_FONT_FAMILY) ||
+                stripped.equals(I18n.get("modernui.center.font.defaultFont"))) {
+            return ModernUIClient.VANILLA_FONT_FAMILY;
+        }
+        return stripped;
     }
 
     public record FontFamilyItem(String rootName, String localeName)
