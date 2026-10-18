@@ -33,6 +33,7 @@ import icyllis.modernui.mc.MuiModApi;
 import icyllis.modernui.mc.text.mixin.AccessBufferSource;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.*;
@@ -242,6 +243,22 @@ public class TextRenderType extends RenderType {
         }
     }
 
+    private static void registerFixedBuffer(TextRenderType type, ByteBufferBuilder buffer, String name) {
+        var access = (AccessBufferSource) Minecraft.getInstance().renderBuffers().bufferSource();
+        try {
+            access.getFixedBuffers().put(type, buffer);
+        } catch (Exception e) {
+            try {
+                var copy = new Object2ObjectLinkedOpenHashMap<RenderType, ByteBufferBuilder>(
+                        access.getFixedBuffers());
+                copy.put(type, buffer);
+                access.setFixedBuffers(copy);
+            } catch (Exception e2) {
+                LOGGER.warn(MARKER, "Failed to add SDF {} to fixed buffers", name, e2);
+            }
+        }
+    }
+
     @Nonnull
     private static TextRenderType makeSDFFillType(int texture) {
         ensureLinearFontSampler();
@@ -261,12 +278,7 @@ public class TextRenderType extends RenderType {
             assert (sSDFFillTypes.isEmpty());
             sFirstSDFFillType = renderType;
             if (TextLayoutEngine.sUseTextShadersInWorld) {
-                try {
-                    ((AccessBufferSource) Minecraft.getInstance().renderBuffers().bufferSource()).getFixedBuffers()
-                            .put(renderType, sFirstSDFFillBuffer);
-                } catch (Exception e) {
-                    LOGGER.warn(MARKER, "Failed to add SDF fill to fixed buffers", e);
-                }
+                registerFixedBuffer(renderType, sFirstSDFFillBuffer, "fill");
             }
         }
         return renderType;
@@ -291,12 +303,7 @@ public class TextRenderType extends RenderType {
             assert (sSDFStrokeTypes.isEmpty());
             sFirstSDFStrokeType = renderType;
             if (TextLayoutEngine.sUseTextShadersInWorld) {
-                try {
-                    ((AccessBufferSource) Minecraft.getInstance().renderBuffers().bufferSource()).getFixedBuffers()
-                            .put(renderType, sFirstSDFStrokeBuffer);
-                } catch (Exception e) {
-                    LOGGER.warn(MARKER, "Failed to add SDF stroke to fixed buffers", e);
-                }
+                registerFixedBuffer(renderType, sFirstSDFStrokeBuffer, "stroke");
             }
         }
         return renderType;
