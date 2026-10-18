@@ -20,15 +20,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - name: Fabric
+            project: ':ModernUI-Fabric'
+            dir: fabric
           - name: Forge
             project: ':ModernUI-Forge'
             dir: forge
           - name: NeoForge
             project: ':ModernUI-NeoForge'
             dir: neoforge
-          - name: Fabric
-            project: ':ModernUI-Fabric'
-            dir: fabric
 
     steps:
       - name: Checkout

@@ -232,6 +232,7 @@ public final class ConfigImpl {
         public final ForgeConfigSpec.IntValue mBlurRadius;
         public final ForgeConfigSpec.ConfigValue<List<? extends String>> mBackgroundColor;
         public final ForgeConfigSpec.BooleanValue mTooltip;
+        public final ForgeConfigSpec.EnumValue<Config.TooltipStyle> mTooltipStyle;
         public final ForgeConfigSpec.BooleanValue mRoundedTooltip;
         public final ForgeConfigSpec.BooleanValue mCenterTooltipTitle;
         public final ForgeConfigSpec.BooleanValue mTooltipTitleBreak;
@@ -350,6 +351,11 @@ public final class ConfigImpl {
             mTooltip = builder.comment(
                             "Whether to enable Modern UI enhanced tooltip, or back to vanilla default.")
                     .define("enable", !ModernUIMod.isLegendaryTooltipsLoaded());
+            mTooltipStyle = builder.comment(
+                            "The tooltip appearance when Modern UI enhanced tooltip is enabled.",
+                            "VANILLA: Vanilla appearance, keeping automatic scrolling when out of screen.",
+                            "MODERN: Modern UI's own look and rendering optimizations.")
+                    .defineEnum("style", Config.TooltipStyle.VANILLA);
             mRoundedTooltip = builder.comment(
                             "Whether to use rounded tooltip shapes, or to use vanilla style.")
                     .define("roundedShape", true);

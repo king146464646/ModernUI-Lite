@@ -93,6 +93,18 @@ public class PreferencesFragment extends Fragment {
         Config.TEXT.reload();
     };
 
+    @Nullable
+    View mShadowOffsetOption;
+
+    void updateShadowOffsetOption() {
+        if (mShadowOffsetOption != null) {
+            boolean textEngineEnabled = !Boolean.parseBoolean(
+                    ModernUIClient.getBootstrapProperty(ModernUIMod.BOOTSTRAP_DISABLE_TEXT_ENGINE));
+            ThemeControl.setViewAndChildrenEnabled(mShadowOffsetOption,
+                    textEngineEnabled && !ModernUIClient.isVanillaFontSelected());
+        }
+    }
+
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable DataSet savedInstanceState) {
@@ -396,14 +408,15 @@ public class PreferencesFragment extends Fragment {
                 onFontChanged = () -> {
                     if (ModernUIClient.isVanillaFontSelected()) {
                         value.setText(I18n.get("modernui.center.font.defaultFont"));
-                        return;
-                    }
-                    FontFamily first = ModernUIClient.getInstance().getFirstFontFamily();
-                    if (first != null) {
-                        value.setText(first.getFamilyName(value.getTextLocale()));
                     } else {
-                        value.setText("NONE");
+                        FontFamily first = ModernUIClient.getInstance().getFirstFontFamily();
+                        if (first != null) {
+                            value.setText(first.getFamilyName(value.getTextLocale()));
+                        } else {
+                            value.setText("NONE");
+                        }
                     }
+                    updateShadowOffsetOption();
                 };
                 onFontChanged.run();
                 value.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
@@ -490,6 +503,14 @@ public class PreferencesFragment extends Fragment {
         boolean curTooltipEnabled = Config.CLIENT.mTooltip.get();
 
         final View[] tooltipCategories = new View[2];
+        final View[] modernStyleOnly = new View[2];
+        Runnable updateModernStyleOptions = () -> {
+            boolean enabled = Config.CLIENT.mTooltip.get() &&
+                    Config.CLIENT.mTooltipStyle.get() == Config.TooltipStyle.MODERN;
+            for (var v : modernStyleOnly) {
+                ThemeControl.setViewAndChildrenEnabled(v, enabled);
+            }
+        };
 
         {
             var list = createCategoryList(content, null);
@@ -532,6 +553,7 @@ public class PreferencesFragment extends Fragment {
                     for (var v : tooltipCategories) {
                         ThemeControl.setViewAndChildrenEnabled(v, checked);
                     }
+                    updateModernStyleOptions.run();
                 });
                 list.addView(option);
             }
@@ -543,11 +565,14 @@ public class PreferencesFragment extends Fragment {
             content.addView(list);
         }
 
-        content.addView(tooltipCategories[0] = createTooltipCategory(content));
+        content.addView(tooltipCategories[0] = createTooltipCategory(
+                content, modernStyleOnly, updateModernStyleOptions));
         content.addView(tooltipCategories[1] = createTooltipBorderCategory(content));
+        modernStyleOnly[1] = tooltipCategories[1];
         for (var v : tooltipCategories) {
             ThemeControl.setViewAndChildrenEnabled(v, curTooltipEnabled);
         }
+        updateModernStyleOptions.run();
 
         return content;
     }
@@ -580,6 +605,7 @@ public class PreferencesFragment extends Fragment {
                     for (var v : categories) {
                         ThemeControl.setViewAndChildrenEnabled(v, checked);
                     }
+                    updateShadowOffsetOption();
                 });
                 list.addView(option);
             }
@@ -591,22 +617,26 @@ public class PreferencesFragment extends Fragment {
         for (var v : categories) {
             ThemeControl.setViewAndChildrenEnabled(v, curTextEngineEnabled);
         }
+        updateShadowOffsetOption();
 
         return content;
     }
 
-    public LinearLayout createTooltipCategory(@NonNull ViewGroup page) {
+    public LinearLayout createTooltipCategory(@NonNull ViewGroup page,
+                                              @NonNull View[] modernStyleOnly,
+                                              @NonNull Runnable onStyleChanged) {
         var context = page.getContext();
         var category = createCategoryList(page, "modernui.center.category.tooltip");
 
         Runnable onChanged = mOnClientConfigChanged;
 
-        new BooleanOption(context, "modernui.center.tooltip.centerTitle",
-                Config.CLIENT.mCenterTooltipTitle, onChanged)
-                .create(category);
-
-        new BooleanOption(context, "modernui.center.tooltip.titleBreak",
-                Config.CLIENT.mTooltipTitleBreak, onChanged)
+        new DropDownOption<>(context, "modernui.center.tooltip.style",
+                Config.TooltipStyle.values(),
+                Config.CLIENT.mTooltipStyle,
+                () -> {
+                    onChanged.run();
+                    onStyleChanged.run();
+                })
                 .create(category);
 
         new BooleanOption(context, "modernui.center.tooltip.exactPositioning",
@@ -617,8 +647,24 @@ public class PreferencesFragment extends Fragment {
                 2, Config.CLIENT.mTooltipArrowScrollFactor, onChanged)
                 .create(category, 3);
 
-        category.addView(createColorOpacityOption(context, "modernui.center.tooltip.backgroundOpacity",
+        var rest = new LinearLayout(context);
+        rest.setOrientation(LinearLayout.VERTICAL);
+        rest.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        new BooleanOption(context, "modernui.center.tooltip.centerTitle",
+                Config.CLIENT.mCenterTooltipTitle, onChanged)
+                .create(rest);
+
+        new BooleanOption(context, "modernui.center.tooltip.titleBreak",
+                Config.CLIENT.mTooltipTitleBreak, onChanged)
+                .create(rest);
+
+        rest.addView(createColorOpacityOption(context, "modernui.center.tooltip.backgroundOpacity",
                 Config.CLIENT.mTooltipFill, onChanged));
+
+        category.addView(rest);
+        modernStyleOnly[0] = rest;
 
         return category;
     }
@@ -751,9 +797,10 @@ public class PreferencesFragment extends Fragment {
                 Config.TEXT.mAllowShadow, onChanged)
                 .create(category);
 
-        new FloatOption(context, "modernui.center.text.shadowOffset",
+        mShadowOffsetOption = new FloatOption(context, "modernui.center.text.shadowOffset",
                 Config.TEXT.mShadowOffset, 100, onChanged)
                 .create(category, 4);
+        updateShadowOffsetOption();
 
         new FloatOption(context, "modernui.center.text.baselineShift",
                 Config.TEXT.mBaselineShift, 10, onChanged)

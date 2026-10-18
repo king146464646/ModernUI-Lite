@@ -92,6 +92,7 @@ public final class Config {
         public final ConfigItem<Integer> mBlurRadius;
         public final ConfigItem<List<? extends String>> mBackgroundColor;
         public final ConfigItem<Boolean> mTooltip;
+        public final ConfigItem<TooltipStyle> mTooltipStyle;
         public final ConfigItem<Boolean> mRoundedTooltip;
         public final ConfigItem<Boolean> mCenterTooltipTitle;
         public final ConfigItem<Boolean> mTooltipTitleBreak;
@@ -143,6 +144,7 @@ public final class Config {
             mBlurRadius = get(map, "mBlurRadius");
             mBackgroundColor = get(map, "mBackgroundColor");
             mTooltip = get(map, "mTooltip");
+            mTooltipStyle = get(map, "mTooltipStyle");
             mRoundedTooltip = get(map, "mRoundedTooltip");
             mCenterTooltipTitle = get(map, "mCenterTooltipTitle");
             mTooltipTitleBreak = get(map, "mTooltipTitleBreak");
@@ -222,6 +224,9 @@ public final class Config {
             //ModernUIForge.sSecureProfilePublicKey = mSecurePublicKey.get();
 
             TooltipRenderer.sTooltip = mTooltip.get();
+            if (mTooltipStyle != null) {
+                TooltipRenderer.sStyle = mTooltipStyle.get();
+            }
 
             inColors = mTooltipFill.get();
             color = 0xFFFFFFFF;
@@ -615,6 +620,17 @@ public final class Config {
             public String toString() {
                 return text;
             }
+        }
+    }
+
+    public enum TooltipStyle {
+        VANILLA,
+        MODERN;
+
+        @Nonnull
+        @Override
+        public String toString() {
+            return I18n.get("modernui.tooltipStyle." + name().toLowerCase(Locale.ROOT));
         }
     }
 }

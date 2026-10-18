@@ -48,6 +48,7 @@ public final class TooltipRenderer implements ScrollController.IListener {
 
     // config value
     public static volatile boolean sTooltip = true;
+    public static volatile Config.TooltipStyle sStyle = Config.TooltipStyle.VANILLA;
 
     public static final int[] sFillColor = new int[4];
     public static final int[] sStrokeColor = new int[4];
@@ -574,6 +575,11 @@ public final class TooltipRenderer implements ScrollController.IListener {
             }
         }
 
+        if (sStyle == Config.TooltipStyle.VANILLA && !titleGap && list.size() > 1) {
+            titleGap = true;
+            tooltipHeight += TITLE_GAP;
+        }
+
         float tooltipX;
         float tooltipY;
         final float maxScroll;
@@ -646,7 +652,7 @@ public final class TooltipRenderer implements ScrollController.IListener {
             mPendingArrowMove = 0;
         }
 
-        if (sBorderColorCycle > 0) {
+        if (sBorderColorCycle > 0 && sStyle != Config.TooltipStyle.VANILLA) {
             updateBorderColor();
         }
 
@@ -661,7 +667,10 @@ public final class TooltipRenderer implements ScrollController.IListener {
         RenderSystem.enableDepthTest();
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        if (sRoundedShapes) {
+        if (sStyle == Config.TooltipStyle.VANILLA) {
+            drawTrueVanillaBackground(gr, pose,
+                    tooltipX, tooltipY, tooltipWidth, tooltipHeight);
+        } else if (sRoundedShapes) {
             drawRoundedBackground(gr, pose,
                     tooltipX, tooltipY, tooltipWidth, tooltipHeight,
                     titleGap, titleBreakHeight);
@@ -685,7 +694,7 @@ public final class TooltipRenderer implements ScrollController.IListener {
         gr.pose().translate(partialX, partialY, sRoundedShapes ? 0.1f : 0);
         for (int i = 0; i < list.size(); i++) {
             ClientTooltipComponent component = list.get(i);
-            if (titleGap && i == 0 && sCenterTitle) {
+            if (titleGap && i == 0 && sCenterTitle && sStyle != Config.TooltipStyle.VANILLA) {
                 component.renderText(font, drawX + (tooltipWidth - component.getWidth(font)) / 2, drawY, pose, source);
             } else if (mLayoutRTL) {
                 component.renderText(font, drawX + tooltipWidth - component.getWidth(font), drawY, pose, source);
@@ -781,6 +790,30 @@ public final class TooltipRenderer implements ScrollController.IListener {
                     0.08f, // lift it up by 0.08
                     0xE0C8C8C8, 0xE0C8C8C8, 0xE0C8C8C8, 0xE0C8C8C8);
         }
+    }
+
+    private void drawTrueVanillaBackground(@Nonnull GuiGraphics gr, Matrix4f pose,
+                                           float tooltipX, float tooltipY,
+                                           int tooltipWidth, int tooltipHeight) {
+        final int background = 0xF0100010;
+        final int borderTop = 0x505000FF;
+        final int borderBottom = 1344798847;
+
+        float left = tooltipX - 3;
+        float top = tooltipY - 3;
+        float right = tooltipX + tooltipWidth + 3;
+        float bottom = tooltipY + tooltipHeight + 3;
+
+        fillGrad(gr, pose, left - 1, top - 1, right + 1, bottom + 1, 0,
+                background, background, background, background);
+        fillGrad(gr, pose, left, top + 1, left + 1, bottom - 1, 0,
+                borderTop, borderTop, borderBottom, borderBottom);
+        fillGrad(gr, pose, right - 1, top + 1, right, bottom - 1, 0,
+                borderTop, borderTop, borderBottom, borderBottom);
+        fillGrad(gr, pose, left, top, right, top + 1, 0,
+                borderTop, borderTop, borderTop, borderTop);
+        fillGrad(gr, pose, left, bottom - 2, right, bottom - 1, 0,
+                borderBottom, borderBottom, borderBottom, borderBottom);
     }
 
     private void drawVanillaBackground(@Nonnull GuiGraphics gr, Matrix4f pose,
