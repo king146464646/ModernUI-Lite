@@ -11,7 +11,12 @@
 * Master Volume Multiplier
 * Game load notification sound
 
-If you need to use any of the above features, please use another mod instead.
+# If you need to use any of the above features, please use another mod instead.
+
+### New Feature:
+* Add Vanilla Font(Default)
+* Support Emoji 18(Unicode 18)
+* Add a Minecraft(Vanilla Tooltip) Modern Tooltip style (Default)(Supports automatic vertical scrolling when the content exceeds the screen)
 
 ### Description
 Modern UI for Minecraft, is a Minecraft Mod that is based on [Modern UI Core Framework](https://github.com/BloCamLimb/ModernUI) and Modern UI Core Extensions.
