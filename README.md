@@ -10,6 +10,7 @@
 * Play Music
 * Master Volume Multiplier
 * Game load notification sound
+* Remove built-in fonts (you can still switch fonts, e.g. use system fonts or custom fonts)
 
 ### If you need to use any of the above features, please use another mod instead.
 
