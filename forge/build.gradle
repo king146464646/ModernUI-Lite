@@ -85,7 +85,7 @@ dependencies {
     }
     // ModernUI-Code jars built by build.yml, placed at <repo root>/libs
     implementation fileTree(dir: rootProject.file('libs'), include: ['*.jar'])
-    shadow fileTree(dir: rootProject.file('libs'), include: ['*.jar'])
+    shadow fileTree(dir: rootProject.file('libs'), include: ['modernui-core*.jar'])
     implementation(forgeRuntimeLibrary("icyllis.modernui:ModernUI-Markflow:3.12.0")) {
         exclude group: 'icyllis.modernui'
     }
