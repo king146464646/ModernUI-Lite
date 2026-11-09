@@ -14,10 +14,10 @@
 
 ### Other removed features:
 * Remove built-in fonts (you can still switch fonts, e.g. use system fonts or custom fonts)
-* Color Emoji Option(but this is Enabled)
+* Color Emoji Option(but this is Enabled, and Support ResourcePack)
 
 ### New Features:
-* Add Vanilla Font(Default)
+* Add Vanilla Font(Default, Support ResourcePack)
 * Support Emoji 18(Unicode 18)
 * Add a Minecraft(Vanilla Tooltip) Modern Tooltip style (Default)(Supports automatic vertical scrolling when the content exceeds the screen)
 

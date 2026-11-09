@@ -26,6 +26,7 @@ import icyllis.arc3d.engine.*;
 import icyllis.arc3d.opengl.*;
 import icyllis.arc3d.sketch.Typeface;
 import icyllis.modernui.core.Core;
+import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.text.Font;
