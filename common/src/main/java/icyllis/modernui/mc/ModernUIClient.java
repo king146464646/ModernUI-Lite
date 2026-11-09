@@ -398,6 +398,16 @@ public abstract class ModernUIClient extends ModernUI {
                     firstSetter, firstLoad);
         }
         if (emojiFont != null && resourcePackFirst) {
+            if (FontResourceManager.getInstance() instanceof TextLayoutEngine engine) {
+                FontFamily[] vanilla = engine.getVanillaTypefaceFamilies();
+                if (vanilla != null) {
+                    for (FontFamily family : vanilla) {
+                        if (family.isColorEmojiFont()) {
+                            families.add(family);
+                        }
+                    }
+                }
+            }
             families.add(new FontFamily(emojiFont));
         }
         return Typeface.createTypeface(families.toArray(new FontFamily[0]));
