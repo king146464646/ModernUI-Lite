@@ -209,6 +209,11 @@ public class BitmapFont implements Font, AutoCloseable {
         return false;
     }
 
+    @Override
+    public boolean isColorEmojiFont() {
+        return mColorful;
+    }
+
     protected final void putGlyph(int ch, @Nonnull Glyph glyph) {
         if (mGlyphs.put(ch, glyph) != null) {
             LOGGER.warn(GlyphManager.MARKER, "Codepoint '{}' declared multiple times in {}",
