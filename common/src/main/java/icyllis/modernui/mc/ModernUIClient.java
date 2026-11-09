@@ -378,7 +378,10 @@ public abstract class ModernUIClient extends ModernUI {
             boolean firstLoad) {
         Set<FontFamily> families = new LinkedHashSet<>();
         var emojiFont = FontResourceManager.getInstance().getEmojiFont();
-        if (emojiFont != null) {
+        // same semantics as TextLayoutEngine: resource pack emoji families
+        // (vanilla font) match first, the built-in emoji font is the fallback
+        boolean resourcePackFirst = sAllowResourcePackEmoji;
+        if (emojiFont != null && !resourcePackFirst) {
             families.add(new FontFamily(emojiFont));
         }
         String first = sFirstFontFamily;
@@ -393,6 +396,9 @@ public abstract class ModernUIClient extends ModernUI {
             }
             loadFonts(first, fallbacks, families,
                     firstSetter, firstLoad);
+        }
+        if (emojiFont != null && resourcePackFirst) {
+            families.add(new FontFamily(emojiFont));
         }
         return Typeface.createTypeface(families.toArray(new FontFamily[0]));
     }
