@@ -35,16 +35,29 @@ jobs:
 
       - name: Build ModernUI-Code Unofficial
         working-directory: ModernUI-Code
+        # Only core is needed; copyDependencies dumps its runtime classpath
+        # (arc3d, slf4j, icu4j, fastutil, ...) next to the jar, because the
+        # flat fileTree in common/build.gradle does not resolve transitively.
         run: |
           chmod +x ./gradlew
-          ./gradlew build --console=plain
+          ./gradlew :modernui-core:jar :modernui-core:copyDependencies --console=plain
+
+      - name: Collect ModernUI-Code jars
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp ModernUI-Code/core/build/libs/*.jar dist/
+          cp ModernUI-Code/core/build/output/libs/*.jar dist/
+          # sources/javadoc jars must not end up on the compile classpath
+          rm -f dist/*-sources.jar dist/*-javadoc.jar
+          ls -l dist
 
       # Hand the upstream jars to the matrix jobs via cache (not an artifact,
       # so nothing shows up in the downloadable Artifacts list).
       - name: Cache ModernUI-Code libs
         uses: actions/cache/save@v4
         with:
-          path: ModernUI-Code/build/libs
+          path: dist
           key: modernui-code-${{ github.run_id }}-${{ github.run_attempt }}
 
   build:
@@ -90,7 +103,7 @@ jobs:
       - name: Restore ModernUI-Code libs
         uses: actions/cache/restore@v4
         with:
-          path: ModernUI-Code/build/libs
+          path: dist
           key: modernui-code-${{ github.run_id }}-${{ github.run_attempt }}
           fail-on-cache-miss: true
 
@@ -98,7 +111,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p libs
-          cp ModernUI-Code/build/libs/*.jar libs/
+          cp dist/*.jar libs/
 
       - name: Point JavaCompile at the JDK 25 javac
         shell: bash
