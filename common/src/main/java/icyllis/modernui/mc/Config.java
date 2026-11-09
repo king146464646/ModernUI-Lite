@@ -130,7 +130,7 @@ public final class Config {
         public final ConfigItem<String> mFirstFontFamily;
         public final ConfigItem<List<? extends String>> mFallbackFontFamilyList;
         public final ConfigItem<List<? extends String>> mFontRegistrationList;
-        public final ConfigItem<Boolean> mUseColorEmoji;
+        public final ConfigItem<Boolean> mAllowResourcePackEmoji;
         public final ConfigItem<Boolean> mLinearMetrics;
         public final ConfigItem<Boolean> mEmojiShortcodes;
 
@@ -182,7 +182,7 @@ public final class Config {
             mFirstFontFamily = get(map, "mFirstFontFamily");
             mFallbackFontFamilyList = get(map, "mFallbackFontFamilyList");
             mFontRegistrationList = get(map, "mFontRegistrationList");
-            mUseColorEmoji = get(map, "mUseColorEmoji");
+            mAllowResourcePackEmoji = get(map, "mAllowResourcePackEmoji");
             mLinearMetrics = get(map, "mLinearMetrics");
             mEmojiShortcodes = get(map, "mEmojiShortcodes");
         }
@@ -340,7 +340,7 @@ public final class Config {
                 });
             }
 
-            ModernUIClient.sUseColorEmoji = mUseColorEmoji.get();
+            ModernUIClient.sAllowResourcePackEmoji = mAllowResourcePackEmoji.get();
             ModernUIClient.sEmojiShortcodes = mEmojiShortcodes.get();
             ModernUIClient.sFirstFontFamily = mFirstFontFamily.get();
             ModernUIClient.sFallbackFontFamilyList = mFallbackFontFamilyList.get();

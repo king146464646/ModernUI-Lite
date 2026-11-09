@@ -23,7 +23,6 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.text.FontFamily;
 import icyllis.modernui.graphics.text.FontPaint;
-import icyllis.modernui.graphics.text.OutlineFont;
 import icyllis.modernui.mc.text.*;
 import icyllis.modernui.mc.ui.PreferencesFragment;
 import icyllis.modernui.text.Typeface;
@@ -91,7 +90,7 @@ public abstract class ModernUIClient extends ModernUI {
 
     public static volatile boolean sRemoveTelemetrySession;
     public static volatile float sFontScale = 1;
-    public static volatile boolean sUseColorEmoji;
+    public static volatile boolean sAllowResourcePackEmoji = true;
     public static volatile boolean sEmojiShortcodes = true;
     public static final String VANILLA_FONT_FAMILY = "minecraft:default";
     public static volatile String sFirstFontFamily;
@@ -279,20 +278,20 @@ public abstract class ModernUIClient extends ModernUI {
         if (VANILLA_FONT_FAMILY.equals(value)) {
             if (FontResourceManager.getInstance() instanceof TextLayoutEngine engine) {
                 FontFamily[] families = engine.getVanillaTypefaceFamilies();
-                if (families != null) {
+                if (families != null && families.length > 0) {
+                    boolean firstFamily = true;
                     for (FontFamily family : families) {
-                        if (family.getClosestMatch(FontPaint.NORMAL) instanceof OutlineFont) {
-                            selected.add(family);
-                            if (firstSetter != null) {
-                                firstSetter.accept(family);
-                            }
-                            LOGGER.debug(MARKER, "Font '{}' was loaded as VANILLA FONT", value);
-                            return true;
+                        selected.add(family);
+                        if (firstFamily && firstSetter != null) {
+                            firstSetter.accept(family);
+                            firstFamily = false;
                         }
                     }
+                    LOGGER.debug(MARKER, "Font '{}' was loaded as VANILLA FONT", value);
+                    return true;
                 }
             }
-            LOGGER.debug(MARKER, "No outline family in vanilla fonts, " +
+            LOGGER.debug(MARKER, "No vanilla font families, " +
                     "fall back to other families for Modern UI screens");
             return false;
         }
@@ -378,14 +377,9 @@ public abstract class ModernUIClient extends ModernUI {
             @Nonnull Consumer<FontFamily> firstSetter,
             boolean firstLoad) {
         Set<FontFamily> families = new LinkedHashSet<>();
-        if (sUseColorEmoji) {
-            var emojiFont = FontResourceManager.getInstance().getEmojiFont();
-            if (emojiFont != null) {
-                var colorEmojiFamily = new FontFamily(
-                        emojiFont
-                );
-                families.add(colorEmojiFamily);
-            }
+        var emojiFont = FontResourceManager.getInstance().getEmojiFont();
+        if (emojiFont != null) {
+            families.add(new FontFamily(emojiFont));
         }
         String first = sFirstFontFamily;
         List<? extends String> configs = sFallbackFontFamilyList;

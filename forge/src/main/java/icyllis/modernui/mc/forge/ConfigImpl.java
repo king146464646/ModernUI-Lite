@@ -280,7 +280,7 @@ public final class ConfigImpl {
         public final ForgeConfigSpec.ConfigValue<String> mFirstFontFamily;
         public final ForgeConfigSpec.ConfigValue<List<? extends String>> mFallbackFontFamilyList;
         public final ForgeConfigSpec.ConfigValue<List<? extends String>> mFontRegistrationList;
-        public final ForgeConfigSpec.BooleanValue mUseColorEmoji;
+        public final ForgeConfigSpec.BooleanValue mAllowResourcePackEmoji;
         public final ForgeConfigSpec.BooleanValue mLinearMetrics;
         public final ForgeConfigSpec.BooleanValue mEmojiShortcodes;
 
@@ -568,10 +568,10 @@ public final class ConfigImpl {
                             "System requires random access to these files, you should not remove them while running.",
                             "This is only read once when the game is loaded, i.e. registration.")
                     .defineList("fontRegistrationList", ArrayList::new, s -> true);
-            mUseColorEmoji = builder.comment(
-                            "Whether to use Google Noto Color Emoji, otherwise grayscale emoji (faster).",
-                            "See Unicode 15.0 specification for details on how this affects text layout.")
-                    .define("useColorEmoji", true);
+            mAllowResourcePackEmoji = builder.comment(
+                            "Whether to allow resource packs to provide emoji through vanilla font definitions.",
+                            "When enabled, emoji from resource packs take priority over Modern UI's built-in emoji.")
+                    .define("allowResourcePackEmoji", true);
             mLinearMetrics = builder.comment(
                             "When enabled, text layout uses fractional metrics with no font hinting and applies sub-pixel positioning.",
                             "When disabled, text layout uses integer metrics with full font hinting.")
@@ -668,7 +668,6 @@ public final class ConfigImpl {
         public final ForgeConfigSpec.EnumValue<Config.Text.TextDirection> mTextDirection;
         //public final ForgeConfigSpec.BooleanValue mBitmapReplacement;
         //public final ForgeConfigSpec.BooleanValue mUseDistanceField;
-        //public final ForgeConfigSpec.BooleanValue mUseVanillaFont;
         public final ForgeConfigSpec.BooleanValue mUseTextShadersInWorld;
         public final ForgeConfigSpec.EnumValue<Config.Text.DefaultFontBehavior> mDefaultFontBehavior;
         public final ForgeConfigSpec.ConfigValue<List<? extends String>> mDefaultFontRuleSet;
@@ -750,9 +749,6 @@ public final class ConfigImpl {
             /*mBitmapReplacement = builder.comment(
                             "Whether to use bitmap replacement for non-Emoji character sequences. Restart is required.")
                     .define("bitmapReplacement", false);*/
-            /*mUseVanillaFont = builder.comment(
-                            "Whether to use Minecraft default bitmap font for basic Latin letters.")
-                    .define("useVanillaFont", false);*/
             mUseTextShadersInWorld = builder.comment(
                             "Whether to use Modern UI text rendering pipeline in 3D world.",
                             "Disabling this means that SDF text and rendering optimization are no longer effective.",

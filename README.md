@@ -1,7 +1,7 @@
 # Modern UI for Minecraft
 [![CurseForge](http://cf.way2muchnoise.eu/full_352491_downloads.svg)](https://www.curseforge.com/minecraft/mc-mods/modern-ui)
 [![CurseForge](http://cf.way2muchnoise.eu/versions/For%20Minecraft_352491_all.svg)](https://www.curseforge.com/minecraft/mc-mods/modern-ui)
-### This project removed features are as follows:
+### Removed features:
 * Home tab
 * OptiFine Zoom
 * GUI Scale
@@ -10,11 +10,13 @@
 * Play Music
 * Master Volume Multiplier
 * Game load notification sound
-* Remove built-in fonts (you can still switch fonts, e.g. use system fonts or custom fonts)
-
 ### If you need to use any of the above features, please use another mod instead.
 
-### This project add New Feature:
+### Other removed features:
+* Remove built-in fonts (you can still switch fonts, e.g. use system fonts or custom fonts)
+* Color Emoji Option(but this is Enabled)
+
+### New Features:
 * Add Vanilla Font(Default)
 * Support Emoji 18(Unicode 18)
 * Add a Minecraft(Vanilla Tooltip) Modern Tooltip style (Default)(Supports automatic vertical scrolling when the content exceeds the screen)

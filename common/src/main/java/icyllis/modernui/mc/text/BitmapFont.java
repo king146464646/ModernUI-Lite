@@ -97,6 +97,9 @@ public class BitmapFont implements Font, AutoCloseable {
     private final float mScaleFactor;
     private final int[][] mCodepointGrid;
 
+    // lazily created on UI thread, drawn as images in Modern UI screens
+    private Image mSheetImage;
+
     private BitmapFont(ResourceLocation name, Bitmap bitmap,
                        int[][] grid, int rows, int cols,
                        int height, int ascent) {
@@ -295,8 +298,13 @@ public class BitmapFont implements Font, AutoCloseable {
 
     @Override
     public int getMetrics(@Nonnull FontPaint paint, FontMetricsInt fm) {
-        // unused in Minecraft
-        return 0;
+        float scaleUp = (int) (paint.getFontSize() / TextLayoutProcessor.sBaseFontSize + 0.5);
+        int ascent = Math.round(mAscent * scaleUp);
+        int descent = Math.round(mDescent * scaleUp);
+        if (fm != null) {
+            fm.extendBy(-ascent, descent);
+        }
+        return ascent + descent;
     }
 
     @Nullable
@@ -438,6 +446,42 @@ public class BitmapFont implements Font, AutoCloseable {
     }
 
     @Override
+    public boolean hasRasterGlyphs() {
+        return true;
+    }
+
+    @Override
+    public void drawRasterGlyph(@Nonnull Canvas canvas, int glyphId, float x, float y,
+                                @Nonnull Paint paint, @Nonnull FontPaint fontPaint) {
+        Glyph glyph = getGlyph(glyphId);
+        if (glyph == null || glyph.isEmpty || nothingToDraw()) {
+            return;
+        }
+        Image image = obtainSheetImage();
+        if (image == null) {
+            return;
+        }
+        float scaleUp = (int) (fontPaint.getFontSize() / TextLayoutProcessor.sBaseFontSize + 0.5);
+        float dstLeft = x;
+        float dstTop = y - mAscent * scaleUp;
+        float dstRight = dstLeft + mSpriteWidth * mScaleFactor * scaleUp;
+        float dstBottom = dstTop + mSpriteHeight * mScaleFactor * scaleUp;
+        canvas.drawImage(image,
+                glyph.offsetX, glyph.offsetY,
+                glyph.offsetX + mSpriteWidth, glyph.offsetY + mSpriteHeight,
+                dstLeft, dstTop, dstRight, dstBottom,
+                paint);
+    }
+
+    @Nullable
+    private Image obtainSheetImage() {
+        if (mSheetImage == null && mBitmap != null) {
+            mSheetImage = Image.createTextureFromBitmap(mBitmap);
+        }
+        return mSheetImage;
+    }
+
+    @Override
     public float doComplexLayout(char[] buf,
                                  int contextStart, int contextLimit,
                                  int layoutStart, int layoutLimit,
@@ -527,6 +571,10 @@ public class BitmapFont implements Font, AutoCloseable {
         if (mBitmap != null) {
             mBitmap.close();
             mBitmap = null;
+        }
+        if (mSheetImage != null) {
+            mSheetImage.close();
+            mSheetImage = null;
         }
         mTexture = RefCnt.move(mTexture);
     }

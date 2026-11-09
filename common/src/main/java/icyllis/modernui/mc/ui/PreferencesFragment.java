@@ -448,6 +448,20 @@ public class PreferencesFragment extends Fragment {
             var params = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
             category.addView(firstLine, params);
 
+            {
+                TextView hint = new TextView(context);
+                hint.setText(I18n.get("modernui.center.font.resourcePackHint"));
+                hint.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+                hint.setTextSize(12);
+                if (context.getTheme().resolveAttribute(R.ns, R.attr.colorOnSurfaceVariant, value, true)) {
+                    hint.setTextColor(value.data);
+                }
+
+                var hintParams = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+                hintParams.setMargins(dp6, hint.dp(4), dp6, 0);
+                category.addView(hint, hintParams);
+            }
+
             content.addView(category);
         }
 
@@ -464,12 +478,8 @@ public class PreferencesFragment extends Fragment {
                 category.addView(option);
             }
 
-            /*list.addView(createBooleanOption(context, "modernui.center.font.vanillaFont",
-                    ModernUIText.CONFIG.mUseVanillaFont,
-                    ModernUIText.CONFIG::saveAndReloadAsync));*/
-
-            new BooleanOption(context, "modernui.center.font.colorEmoji",
-                    Config.CLIENT.mUseColorEmoji, () -> {
+            new BooleanOption(context, "modernui.center.font.resourcePackEmoji",
+                    Config.CLIENT.mAllowResourcePackEmoji, () -> {
                 mOnClientConfigChanged.run();
                 reloadDefaultTypeface(context, null);
             })

@@ -21,6 +21,11 @@ package icyllis.modernui.mc.text;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import icyllis.modernui.graphics.Bitmap;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Image;
+import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.text.FontPaint;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -51,6 +56,9 @@ public class UnifontFont extends BitmapFont {
 
     private final ResourceLocation mHexFile;
     private final Int2ObjectOpenHashMap<int[]> mHexGlyphs;
+
+    // lazily created on UI thread, one image per glyph
+    private final Int2ObjectOpenHashMap<Image> mGlyphImages = new Int2ObjectOpenHashMap<>();
 
     private UnifontFont(@Nonnull ResourceLocation hexFile, int[][] grid,
                         @Nonnull Int2ObjectOpenHashMap<int[]> hexGlyphs) {
@@ -202,6 +210,52 @@ public class UnifontFont extends BitmapFont {
             }
         }
         return true;
+    }
+
+    @Override
+    public void drawRasterGlyph(@Nonnull Canvas canvas, int glyphId, float x, float y,
+                                @Nonnull Paint paint, @Nonnull FontPaint fontPaint) {
+        Glyph glyph = getGlyph(glyphId);
+        if (glyph == null || glyph.isEmpty || nothingToDraw()) {
+            return;
+        }
+        Image image = mGlyphImages.get(glyphId);
+        if (image == null) {
+            image = createGlyphImage(glyphId);
+            if (image == null) {
+                return;
+            }
+            mGlyphImages.put(glyphId, image);
+        }
+        float scaleUp = (int) (fontPaint.getFontSize() / TextLayoutProcessor.sBaseFontSize + 0.5);
+        float dstLeft = x;
+        float dstTop = y - getAscent() * scaleUp;
+        float dstRight = dstLeft + SPRITE_WIDTH * getScaleFactor() * scaleUp;
+        float dstBottom = dstTop + SPRITE_HEIGHT * getScaleFactor() * scaleUp;
+        canvas.drawImage(image, 0, 0, SPRITE_WIDTH, SPRITE_HEIGHT,
+                dstLeft, dstTop, dstRight, dstBottom, paint);
+    }
+
+    @Nullable
+    private Image createGlyphImage(int glyphId) {
+        Bitmap bitmap = Bitmap.createBitmap(SPRITE_WIDTH, SPRITE_HEIGHT, Bitmap.Format.RGBA_8888);
+        try {
+            if (!getGlyphImage(glyphId, bitmap.getAddress())) {
+                return null;
+            }
+            return Image.createTextureFromBitmap(bitmap);
+        } finally {
+            bitmap.close();
+        }
+    }
+
+    @Override
+    public void close() {
+        for (Image image : mGlyphImages.values()) {
+            image.close();
+        }
+        mGlyphImages.clear();
+        super.close();
     }
 
     @Override

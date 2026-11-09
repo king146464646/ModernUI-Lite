@@ -12,8 +12,44 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  build-upstream:
+    name: Build ModernUI-Code Unofficial
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout ModernUI-Code Unofficial
+        uses: actions/checkout@v4
+        with:
+          repository: king146464646/ModernUI-Code
+          ref: 3.13.0
+          path: ModernUI-Code
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build ModernUI-Code Unofficial
+        working-directory: ModernUI-Code
+        run: |
+          chmod +x ./gradlew
+          ./gradlew build --console=plain
+
+      # Hand the upstream jars to the matrix jobs via cache (not an artifact,
+      # so nothing shows up in the downloadable Artifacts list).
+      - name: Cache ModernUI-Code libs
+        uses: actions/cache/save@v4
+        with:
+          path: ModernUI-Code/build/libs
+          key: modernui-code-${{ github.run_id }}-${{ github.run_attempt }}
+
   build:
     name: Build ${{ matrix.name }}
+    needs: build-upstream
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
@@ -34,16 +70,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # javac 21 rejects valid RuntimeInvisibleParameterAnnotations attributes
-      # in our dependencies (JDK-8334870, fixed in JDK 24, still unbackported to
-      # 21 as JDK-8360894). Compile with javac 25 instead.
-      #
-      # Gradle 8.8 cannot RUN on Java 25, so install 25 first for the compiler
-      # and then 21, which stays as JAVA_HOME for Gradle itself.
-      #
-      # Output stays Java 21-compatible because build.gradle already sets
-      # options.release.set(21) -> javac runs with "--release 21", which emits
-      # class file major version 65 and forbids any post-21 APIs.
       - name: Set up JDK 25 (compiler)
         id: jdk25
         uses: actions/setup-java@v4
@@ -60,6 +86,19 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+
+      - name: Restore ModernUI-Code libs
+        uses: actions/cache/restore@v4
+        with:
+          path: ModernUI-Code/build/libs
+          key: modernui-code-${{ github.run_id }}-${{ github.run_attempt }}
+          fail-on-cache-miss: true
+
+      - name: Copy ModernUI-Code libs into libs/
+        shell: bash
+        run: |
+          mkdir -p libs
+          cp ModernUI-Code/build/libs/*.jar libs/
 
       - name: Point JavaCompile at the JDK 25 javac
         shell: bash

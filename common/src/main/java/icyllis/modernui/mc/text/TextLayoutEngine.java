@@ -41,6 +41,7 @@ import net.minecraft.client.gui.font.FontSet;
 import net.minecraft.client.gui.font.providers.*;
 import net.minecraft.network.chat.*;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.*;
 import net.minecraft.util.profiling.ProfilerFiller;
@@ -496,15 +497,24 @@ public class TextLayoutEngine extends FontResourceManager
                 }
             }
             LinkedHashSet<FontFamily> composed = new LinkedHashSet<>();
+            EmojiFont emojiFont = getEmojiFont();
+            FontFamily emojiFamily = emojiFont != null ? new FontFamily(emojiFont) : null;
+            boolean resourcePackFirst = ModernUIClient.sAllowResourcePackEmoji;
             if (!ModernUIClient.isVanillaFontSelected()) {
-                composed.addAll(ModernUI.getSelectedTypeface().getFamilies());
-            } else if (ModernUIClient.sUseColorEmoji) {
-                var emojiFont = getEmojiFont();
-                if (emojiFont != null) {
-                    composed.add(new FontFamily(emojiFont));
+                for (FontFamily family : ModernUI.getSelectedTypeface().getFamilies()) {
+                    if (resourcePackFirst &&
+                            family.getClosestMatch(FontPaint.NORMAL) instanceof EmojiFont) {
+                        continue;
+                    }
+                    composed.add(family);
                 }
+            } else if (emojiFamily != null && !resourcePackFirst) {
+                composed.add(emojiFamily);
             }
             composed.addAll(defaultFonts);
+            if (emojiFamily != null && resourcePackFirst) {
+                composed.add(emojiFamily);
+            }
             composed.addAll(unicodeFonts);
             if (composed.isEmpty()) {
                 mFontCollections.put(Minecraft.DEFAULT_FONT, ModernUI.getSelectedTypeface());
@@ -914,7 +924,11 @@ public class TextLayoutEngine extends FontResourceManager
             var name = location.withPath(path.substring(5, path.length() - 5));
             var bundle = new RawFontBundle(name);
             bundles.add(bundle);
-            for (var resource : entry.getValue()) {
+            // The stack is ordered lowest priority first, but higher priority packs must win.
+            // Walk it backwards to match vanilla FontManager's reversed provider order.
+            final List<Resource> stack = entry.getValue();
+            for (int r = stack.size() - 1; r >= 0; r--) {
+                var resource = stack.get(r);
                 try (var reader = resource.openAsReader()) {
                     var providers = GsonHelper.getAsJsonArray(Objects.requireNonNull(
                             gson.fromJson(reader, JsonObject.class)), "providers");
@@ -1004,7 +1018,7 @@ public class TextLayoutEngine extends FontResourceManager
         switch (definition.type()) {
             case BITMAP -> {
                 var bitmapFont = BitmapFont.create((BitmapProvider.Definition) definition, resources);
-                bundle.families.put(
+                bundle.families.putIfAbsent(
                         new FontFamily(bitmapFont),
                         filter
                 );
@@ -1027,14 +1041,14 @@ public class TextLayoutEngine extends FontResourceManager
                     LOGGER.info(MARKER, "Ignore 'skip={}' of providers[{}] in font '{}' in pack: '{}'",
                             ttf.skip(), index, name, sourcePackId);
                 }
-                bundle.families.put(
+                bundle.families.putIfAbsent(
                         createTTF(ttf.location(), resources),
                         filter
                 );
             }
             case SPACE -> {
                 var spaceFont = SpaceFont.create(name, (SpaceProvider.Definition) definition);
-                bundle.families.put(
+                bundle.families.putIfAbsent(
                         new FontFamily(spaceFont),
                         filter
                 );
@@ -1044,7 +1058,7 @@ public class TextLayoutEngine extends FontResourceManager
                 var location = hexFile != null ? ResourceLocation.tryParse(hexFile.getAsString()) : null;
                 if (location != null) {
                     try {
-                        bundle.families.put(
+                        bundle.families.putIfAbsent(
                                 new FontFamily(UnifontFont.create(location, metadata, resources)),
                                 filter
                         );
@@ -1057,11 +1071,11 @@ public class TextLayoutEngine extends FontResourceManager
                     LOGGER.warn(MARKER, "Illegal 'hex_file' of providers[{}] in font '{}' in pack: '{}'",
                             index, name, sourcePackId);
                 }
-                bundle.families.put(INTERNAL_DEFAULT, filter);
+                bundle.families.putIfAbsent(INTERNAL_DEFAULT, filter);
             }
             case REFERENCE -> {
                 ResourceLocation reference = ((ProviderReferenceDefinition) definition).id();
-                bundle.families.put(reference, filter);
+                bundle.families.putIfAbsent(reference, filter);
                 bundle.dependencies.add(reference);
             }
             default -> LOGGER.info(MARKER, "Unknown provider type '{}' in font '{}' in pack: '{}'",
