@@ -24,7 +24,6 @@ import com.google.gson.JsonObject;
 import icyllis.modernui.graphics.Bitmap;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
-import icyllis.modernui.graphics.ImageShader;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.text.FontPaint;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -229,17 +228,19 @@ public class UnifontFont extends BitmapFont {
             mGlyphImages.put(glyphId, image);
         }
         float scaleUp = (int) (fontPaint.getFontSize() / TextLayoutProcessor.sBaseFontSize + 0.5);
+        // snap to integer pixels, a half-pixel dst rect leaves a partially covered
+        // edge that looks like leftover specks
         float dstLeft = Math.round(x);
         float dstTop = Math.round(y - getAscent() * scaleUp);
         float dstRight = dstLeft + SPRITE_WIDTH * getScaleFactor() * scaleUp;
         float dstBottom = dstTop + SPRITE_HEIGHT * getScaleFactor() * scaleUp;
-        int filterMode = paint.getFilterMode();
-        paint.setFilterMode(ImageShader.FILTER_MODE_NEAREST);
+        // nearest sampling, linear would bleed pixels around the glyph
+        beginGlyphDraw(paint);
         try {
             canvas.drawImage(image, 0, 0, SPRITE_WIDTH, SPRITE_HEIGHT,
                     dstLeft, dstTop, dstRight, dstBottom, paint);
         } finally {
-            paint.setFilterMode(filterMode);
+            endGlyphDraw(paint);
         }
     }
 

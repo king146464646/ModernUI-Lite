@@ -21,6 +21,9 @@ package icyllis.modernui.mc;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.graphics.Bitmap;
+import icyllis.modernui.graphics.BitmapFactory;
+import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.text.*;
 import icyllis.modernui.mc.text.GlyphManager;
 import icyllis.modernui.mc.text.TextLayoutEngine;
@@ -28,6 +31,7 @@ import icyllis.modernui.text.Typeface;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import net.minecraft.client.Minecraft;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.profiling.ProfilerFiller;
@@ -35,9 +39,11 @@ import org.jetbrains.annotations.Unmodifiable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.function.Function;
 
 import static icyllis.modernui.mc.ModernUIMod.LOGGER;
 
@@ -158,6 +164,7 @@ public class FontResourceManager implements PreparableReloadListener {
     // SYNC
     protected void applyResources(@Nonnull LoadResults results) {
         // reload emojis
+        EmojiFont oldEmojiFont = mEmojiFont;
         mEmojiFont = results.mEmojiFont;
         mEmojiShortcodes.clear();
         mEmojiShortcodes.putAll(results.mEmojiShortcodes);
@@ -172,6 +179,9 @@ public class FontResourceManager implements PreparableReloadListener {
         }
         reloadAll();
         ModernUIClient.getInstance().onTypefaceReplaced(oldTypeface);
+        if (oldEmojiFont != null && oldEmojiFont != mEmojiFont) {
+            oldEmojiFont.close();
+        }
     }
 
     // SYNC, close native resources
@@ -237,9 +247,32 @@ public class FontResourceManager implements PreparableReloadListener {
                     GlyphManager.EMOJI_ASCENT,
                     GlyphManager.EMOJI_SPACING,
                     GlyphManager.EMOJI_BASE,
-                    map, files);
+                    map, files,
+                    FontResourceManager::loadEmojiImage);
         } else {
             LOGGER.info(GlyphManager.MARKER, "No Emoji font was found");
+        }
+    }
+
+    // SYNC, on UI thread
+    @Nullable
+    private static Image loadEmojiImage(@Nonnull String fileName) {
+        var location = ModernUIMod.location("emoji/" + fileName);
+        var opts = new BitmapFactory.Options();
+        opts.inPreferredFormat = Bitmap.Format.RGBA_8888;
+        try (InputStream inputStream = Minecraft.getInstance().getResourceManager()
+                .open(location);
+             Bitmap bitmap = BitmapFactory.decodeStream(inputStream, opts)) {
+            if (bitmap.getWidth() != GlyphManager.EMOJI_SIZE ||
+                    bitmap.getHeight() != GlyphManager.EMOJI_SIZE) {
+                LOGGER.warn(GlyphManager.MARKER, "Emoji is not {}x{}: {}",
+                        GlyphManager.EMOJI_SIZE, GlyphManager.EMOJI_SIZE, location);
+                return null;
+            }
+            return Image.createTextureFromBitmap(bitmap);
+        } catch (Exception e) {
+            LOGGER.warn(GlyphManager.MARKER, "Failed to load emoji: {}", location, e);
+            return null;
         }
     }
 

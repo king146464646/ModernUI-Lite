@@ -101,6 +101,12 @@ public class BitmapFont implements Font, AutoCloseable {
     // lazily created on UI thread, drawn as images in Modern UI screens
     private Image mSheetImage;
 
+    // tint for drawing white glyph masks with the current text color
+    private BlendModeColorFilter mGlyphTint;
+    private int mGlyphTintColor;
+    private int mSavedFilterMode;
+    private ColorFilter mSavedColorFilter;
+
     private BitmapFont(ResourceLocation name, Bitmap bitmap,
                        int[][] grid, int rows, int cols,
                        int height, int ascent) {
@@ -463,12 +469,14 @@ public class BitmapFont implements Font, AutoCloseable {
             return;
         }
         float scaleUp = (int) (fontPaint.getFontSize() / TextLayoutProcessor.sBaseFontSize + 0.5);
+        // snap to integer pixels, a half-pixel dst rect leaves a partially covered
+        // edge that looks like leftover specks (linear metrics also add 0.5 offset)
         float dstLeft = Math.round(x);
         float dstTop = Math.round(y - mAscent * scaleUp);
         float dstRight = dstLeft + mSpriteWidth * mScaleFactor * scaleUp;
         float dstBottom = dstTop + mSpriteHeight * mScaleFactor * scaleUp;
-        int filterMode = paint.getFilterMode();
-        paint.setFilterMode(ImageShader.FILTER_MODE_NEAREST);
+        // nearest sampling, linear would bleed neighboring glyphs from the sheet
+        beginGlyphDraw(paint);
         try {
             canvas.drawImage(image,
                     glyph.offsetX, glyph.offsetY,
@@ -476,8 +484,30 @@ public class BitmapFont implements Font, AutoCloseable {
                     dstLeft, dstTop, dstRight, dstBottom,
                     paint);
         } finally {
-            paint.setFilterMode(filterMode);
+            endGlyphDraw(paint);
         }
+    }
+
+    /**
+     * Prepare the paint to draw a raster glyph mask: nearest sampling, and tint
+     * the white mask with the paint color (drawImage ignores the paint RGB).
+     * Must be paired with {@link #endGlyphDraw(Paint)}.
+     */
+    protected final void beginGlyphDraw(@Nonnull Paint paint) {
+        mSavedFilterMode = paint.getFilterMode();
+        mSavedColorFilter = paint.getColorFilter();
+        paint.setFilterMode(ImageShader.FILTER_MODE_NEAREST);
+        final int color = paint.getColor();
+        if (mGlyphTint == null || mGlyphTintColor != color) {
+            mGlyphTintColor = color;
+            mGlyphTint = new BlendModeColorFilter(color, BlendMode.SRC_IN);
+        }
+        paint.setColorFilter(mGlyphTint);
+    }
+
+    protected final void endGlyphDraw(@Nonnull Paint paint) {
+        paint.setFilterMode(mSavedFilterMode);
+        paint.setColorFilter(mSavedColorFilter);
     }
 
     @Nullable
