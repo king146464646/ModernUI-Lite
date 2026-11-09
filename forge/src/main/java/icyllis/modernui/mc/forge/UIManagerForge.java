@@ -33,6 +33,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.renderer.texture.*;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.client.event.*;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.client.settings.KeyModifier;
@@ -268,6 +269,17 @@ public final class UIManagerForge extends UIManager implements LifecycleOwner {
                 TestHUD.sTooltip = false;
                 return;
             }*/
+
+            if (TooltipRenderer.sStyle == Config.TooltipStyle.VANILLA) {
+                // vanilla rendering is canceled below, so post the color event
+                // ourselves to let mods customize the vanilla style background
+                var color = ForgeHooksClient.onRenderTooltipColor(event.getItemStack(), event.getGraphics(),
+                        event.getX(), event.getY(), event.getFont(), event.getComponents());
+                TooltipRenderer.sVanillaBackgroundStart = color.getBackgroundStart();
+                TooltipRenderer.sVanillaBackgroundEnd = color.getBackgroundEnd();
+                TooltipRenderer.sVanillaBorderStart = color.getBorderStart();
+                TooltipRenderer.sVanillaBorderEnd = color.getBorderEnd();
+            }
 
             drawExtTooltip(event.getItemStack(), event.getGraphics(),
                     event.getComponents(),

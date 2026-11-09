@@ -36,6 +36,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.util.ObfuscationReflectionHelper;
+import net.neoforged.neoforge.client.ClientHooks;
 import net.neoforged.neoforge.client.event.*;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
@@ -268,6 +269,17 @@ public final class UIManagerForge extends UIManager implements LifecycleOwner {
                 TestHUD.sTooltip = false;
                 return;
             }*/
+
+            if (TooltipRenderer.sStyle == Config.TooltipStyle.VANILLA) {
+                // vanilla rendering is canceled below, so post the color event
+                // ourselves to let mods customize the vanilla style background
+                var color = ClientHooks.onRenderTooltipColor(event.getItemStack(), event.getGraphics(),
+                        event.getX(), event.getY(), event.getFont(), event.getComponents());
+                TooltipRenderer.sVanillaBackgroundStart = color.getBackgroundStart();
+                TooltipRenderer.sVanillaBackgroundEnd = color.getBackgroundEnd();
+                TooltipRenderer.sVanillaBorderStart = color.getBorderStart();
+                TooltipRenderer.sVanillaBorderEnd = color.getBorderEnd();
+            }
 
             drawExtTooltip(event.getItemStack(), event.getGraphics(),
                     event.getComponents(),

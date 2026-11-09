@@ -50,6 +50,12 @@ public final class TooltipRenderer implements ScrollController.IListener {
     public static volatile boolean sTooltip = true;
     public static volatile Config.TooltipStyle sStyle = Config.TooltipStyle.VANILLA;
 
+    // vanilla style colors, may be overridden by mods via RenderTooltipEvent.Color
+    public static volatile int sVanillaBackgroundStart = 0xF0100010;
+    public static volatile int sVanillaBackgroundEnd = 0xF0100010;
+    public static volatile int sVanillaBorderStart = 0x505000FF;
+    public static volatile int sVanillaBorderEnd = 0x5028007F;
+
     public static final int[] sFillColor = new int[4];
     public static final int[] sStrokeColor = new int[4];
     public static volatile float sBorderWidth = 4 / 3f;
@@ -795,9 +801,10 @@ public final class TooltipRenderer implements ScrollController.IListener {
     private void drawTrueVanillaBackground(@Nonnull GuiGraphics gr, Matrix4f pose,
                                            float tooltipX, float tooltipY,
                                            int tooltipWidth, int tooltipHeight) {
-        final int background = 0xF0100010;
-        final int borderTop = 0x505000FF;
-        final int borderBottom = 1344798847;
+        final int backgroundStart = sVanillaBackgroundStart;
+        final int backgroundEnd = sVanillaBackgroundEnd;
+        final int borderTop = sVanillaBorderStart;
+        final int borderBottom = sVanillaBorderEnd;
 
         float left = tooltipX - 3;
         float top = tooltipY - 3;
@@ -805,7 +812,7 @@ public final class TooltipRenderer implements ScrollController.IListener {
         float bottom = tooltipY + tooltipHeight + 3;
 
         fillGrad(gr, pose, left - 1, top - 1, right + 1, bottom + 1, 0,
-                background, background, background, background);
+                backgroundStart, backgroundStart, backgroundEnd, backgroundEnd);
         fillGrad(gr, pose, left, top + 1, left + 1, bottom - 1, 0,
                 borderTop, borderTop, borderBottom, borderBottom);
         fillGrad(gr, pose, right - 1, top + 1, right, bottom - 1, 0,
