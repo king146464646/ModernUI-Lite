@@ -229,8 +229,8 @@ public class UnifontFont extends BitmapFont {
             mGlyphImages.put(glyphId, image);
         }
         float scaleUp = (int) (fontPaint.getFontSize() / TextLayoutProcessor.sBaseFontSize + 0.5);
-        float dstLeft = x;
-        float dstTop = y - getAscent() * scaleUp;
+        float dstLeft = Math.round(x);
+        float dstTop = Math.round(y - getAscent() * scaleUp);
         float dstRight = dstLeft + SPRITE_WIDTH * getScaleFactor() * scaleUp;
         float dstBottom = dstTop + SPRITE_HEIGHT * getScaleFactor() * scaleUp;
         int filterMode = paint.getFilterMode();

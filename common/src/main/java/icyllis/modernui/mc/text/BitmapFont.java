@@ -463,8 +463,8 @@ public class BitmapFont implements Font, AutoCloseable {
             return;
         }
         float scaleUp = (int) (fontPaint.getFontSize() / TextLayoutProcessor.sBaseFontSize + 0.5);
-        float dstLeft = x;
-        float dstTop = y - mAscent * scaleUp;
+        float dstLeft = Math.round(x);
+        float dstTop = Math.round(y - mAscent * scaleUp);
         float dstRight = dstLeft + mSpriteWidth * mScaleFactor * scaleUp;
         float dstBottom = dstTop + mSpriteHeight * mScaleFactor * scaleUp;
         int filterMode = paint.getFilterMode();
