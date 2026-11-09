@@ -101,6 +101,10 @@ public class BitmapFont implements Font, AutoCloseable {
     // lazily created on UI thread, drawn as images in Modern UI screens
     private Image mSheetImage;
 
+    // true if the sheet contains colored pixels (resource pack color emoji),
+    // drawn as-is; otherwise it's a white mask tinted with the text color
+    private final boolean mColorful;
+
     // tint for drawing white glyph masks with the current text color
     private BlendModeColorFilter mGlyphTint;
     private int mGlyphTintColor;
@@ -112,6 +116,7 @@ public class BitmapFont implements Font, AutoCloseable {
                        int height, int ascent) {
         mName = name;
         mBitmap = bitmap;
+        mColorful = hasColorPixels(bitmap);
         mAscent = ascent;
         mDescent = height - ascent;
         mSpriteWidth = bitmap.getWidth() / cols;
@@ -176,12 +181,32 @@ public class BitmapFont implements Font, AutoCloseable {
                          int height, int ascent, int spriteWidth, int spriteHeight) {
         mName = name;
         mBitmap = null;
+        mColorful = false;
         mAscent = ascent;
         mDescent = height - ascent;
         mSpriteWidth = spriteWidth;
         mSpriteHeight = spriteHeight;
         mScaleFactor = (float) height / spriteHeight;
         mCodepointGrid = grid;
+    }
+
+    private static boolean hasColorPixels(@Nonnull Bitmap bitmap) {
+        final int width = bitmap.getWidth();
+        final int height = bitmap.getHeight();
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int c = bitmap.getPixelARGB(x, y);
+                if ((c >>> 24) != 0) {
+                    int r = (c >> 16) & 0xFF;
+                    int g = (c >> 8) & 0xFF;
+                    int b = c & 0xFF;
+                    if (r != g || g != b) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     protected final void putGlyph(int ch, @Nonnull Glyph glyph) {
@@ -491,12 +516,15 @@ public class BitmapFont implements Font, AutoCloseable {
     /**
      * Prepare the paint to draw a raster glyph mask: nearest sampling, and tint
      * the white mask with the paint color (drawImage ignores the paint RGB).
-     * Must be paired with {@link #endGlyphDraw(Paint)}.
+     * Colored sheets are drawn as-is. Must be paired with {@link #endGlyphDraw(Paint)}.
      */
     protected final void beginGlyphDraw(@Nonnull Paint paint) {
         mSavedFilterMode = paint.getFilterMode();
         mSavedColorFilter = paint.getColorFilter();
         paint.setFilterMode(ImageShader.FILTER_MODE_NEAREST);
+        if (mColorful) {
+            return;
+        }
         final int color = paint.getColor();
         if (mGlyphTint == null || mGlyphTintColor != color) {
             mGlyphTintColor = color;

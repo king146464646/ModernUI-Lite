@@ -378,8 +378,8 @@ public abstract class ModernUIClient extends ModernUI {
             boolean firstLoad) {
         Set<FontFamily> families = new LinkedHashSet<>();
         var emojiFont = FontResourceManager.getInstance().getEmojiFont();
-        // same semantics as TextLayoutEngine: resource pack emoji families
-        // (vanilla font) match first, the built-in emoji font is the fallback
+        // same semantics as TextLayoutEngine, the resource pack emoji (vanilla
+        // font definitions) match first, the built-in emoji font is the fallback
         boolean resourcePackFirst = sAllowResourcePackEmoji;
         if (emojiFont != null && !resourcePackFirst) {
             families.add(new FontFamily(emojiFont));
