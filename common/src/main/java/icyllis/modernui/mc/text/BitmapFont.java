@@ -467,11 +467,17 @@ public class BitmapFont implements Font, AutoCloseable {
         float dstTop = y - mAscent * scaleUp;
         float dstRight = dstLeft + mSpriteWidth * mScaleFactor * scaleUp;
         float dstBottom = dstTop + mSpriteHeight * mScaleFactor * scaleUp;
-        canvas.drawImage(image,
-                glyph.offsetX, glyph.offsetY,
-                glyph.offsetX + mSpriteWidth, glyph.offsetY + mSpriteHeight,
-                dstLeft, dstTop, dstRight, dstBottom,
-                paint);
+        int filterMode = paint.getFilterMode();
+        paint.setFilterMode(ImageShader.FILTER_MODE_NEAREST);
+        try {
+            canvas.drawImage(image,
+                    glyph.offsetX, glyph.offsetY,
+                    glyph.offsetX + mSpriteWidth, glyph.offsetY + mSpriteHeight,
+                    dstLeft, dstTop, dstRight, dstBottom,
+                    paint);
+        } finally {
+            paint.setFilterMode(filterMode);
+        }
     }
 
     @Nullable

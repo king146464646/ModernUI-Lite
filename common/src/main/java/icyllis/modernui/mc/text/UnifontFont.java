@@ -24,6 +24,7 @@ import com.google.gson.JsonObject;
 import icyllis.modernui.graphics.Bitmap;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
+import icyllis.modernui.graphics.ImageShader;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.text.FontPaint;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -232,8 +233,14 @@ public class UnifontFont extends BitmapFont {
         float dstTop = y - getAscent() * scaleUp;
         float dstRight = dstLeft + SPRITE_WIDTH * getScaleFactor() * scaleUp;
         float dstBottom = dstTop + SPRITE_HEIGHT * getScaleFactor() * scaleUp;
-        canvas.drawImage(image, 0, 0, SPRITE_WIDTH, SPRITE_HEIGHT,
-                dstLeft, dstTop, dstRight, dstBottom, paint);
+        int filterMode = paint.getFilterMode();
+        paint.setFilterMode(ImageShader.FILTER_MODE_NEAREST);
+        try {
+            canvas.drawImage(image, 0, 0, SPRITE_WIDTH, SPRITE_HEIGHT,
+                    dstLeft, dstTop, dstRight, dstBottom, paint);
+        } finally {
+            paint.setFilterMode(filterMode);
+        }
     }
 
     @Nullable
