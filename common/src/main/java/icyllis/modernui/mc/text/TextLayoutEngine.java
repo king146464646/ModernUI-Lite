@@ -1098,7 +1098,7 @@ public class TextLayoutEngine extends FontResourceManager
     private static void putFamily(@Nonnull RawFontBundle bundle, @Nonnull FontFamily family,
                                   @Nonnull FontOption.Filter filter, @Nonnull String sourcePackId) {
         bundle.families.putIfAbsent(family, filter);
-        if (!"minecraft".equals(sourcePackId)) {
+        if (!"vanilla".equals(sourcePackId) && !"minecraft".equals(sourcePackId)) {
             bundle.resourcePackFamilies.add(family);
         }
     }

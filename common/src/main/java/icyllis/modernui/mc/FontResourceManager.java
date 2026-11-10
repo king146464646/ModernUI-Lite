@@ -188,12 +188,28 @@ public class FontResourceManager implements PreparableReloadListener {
     public void close() {
     }
 
+    /**
+     * Placeholder flag emoji images, each file content is the file name of
+     * the image to show instead. The placeholders are invalid PNG data, so
+     * they are never registered as glyphs, input sequences are redirected
+     * to the target image's glyph ID. Keep in sync with the emoji assets.
+     */
+    private static final Map<String, String> FLAG_REDIRECTS = Map.of(
+            "1f1e7_1f1fb", "1f1f3_1f1f4",
+            "1f1e8_1f1f5", "1f1eb_1f1f7",
+            "1f1e9_1f1ec", "1f1ee_1f1f4",
+            "1f1ea_1f1e6", "1f1ea_1f1f8",
+            "1f1ed_1f1f2", "1f1e6_1f1fa",
+            "1f1f2_1f1eb", "1f1eb_1f1f7",
+            "1f1f8_1f1ef", "1f1f3_1f1f4",
+            "1f1fa_1f1f2", "1f1fa_1f1f8"
+    );
+
     // ASYNC
     protected static void loadEmojis(@Nonnull ResourceManager resources,
                                      @Nonnull LoadResults results) {
         final var map = new Object2IntOpenHashMap<CharSequence>();
         final var files = new ArrayList<String>();
-        CYCLE:
         for (var image : resources.listResources("emoji",
                 res -> res.getPath().endsWith(".png")).keySet()) {
             var path = image.getPath().split("/");
@@ -201,41 +217,31 @@ public class FontResourceManager implements PreparableReloadListener {
                 continue;
             }
             var fileName = path[path.length - 1];
-            var codes = fileName.substring(0, fileName.length() - 4).split("_");
-            int length = codes.length;
-            if (length == 0) {
+            var name = fileName.substring(0, fileName.length() - 4);
+            if (FLAG_REDIRECTS.containsKey(name)) {
+                // registered as a redirect to another image below
                 continue;
             }
-            // double the size, we may add vs16
-            var cps = new int[length << 1];
-            int n = 0;
-            for (int i = 0; i < length; i++) {
-                try {
-                    int c = Integer.parseInt(codes[i], 16);
-                    if (!Character.isValidCodePoint(c)) {
-                        continue CYCLE;
-                    }
-                    boolean ec = Emoji.isEmoji(c);
-                    boolean ecc = isEmoji_ModernUnicodeWorkaround(c);
-                    if (i == 0 && !ec && !ecc) {
-                        continue CYCLE;
-                    }
-                    cps[n++] = c;
-                    // require vs16 for color emoji, otherwise grayscale
-                    if (ec && !Emoji.isEmojiPresentation(c)) {
-                        cps[n++] = Emoji.VARIATION_SELECTOR_16;
-                    }
-                } catch (NumberFormatException e) {
-                    continue CYCLE;
-                }
+            var sequence = buildEmojiSequence(name);
+            if (sequence == null) {
+                continue;
             }
-            var sequence = new String(cps, 0, n);
             if (!map.containsKey(sequence)) {
                 // 1-based as glyph ID, see also GlyphManager.cacheEmoji()
                 map.put(sequence, map.size() + 1);
                 files.add(fileName);
             }
-        } // CYCLE end
+        }
+        for (var redirect : FLAG_REDIRECTS.entrySet()) {
+            String input = buildEmojiSequence(redirect.getKey());
+            String target = buildEmojiSequence(redirect.getValue());
+            if (input == null || target == null || !map.containsKey(target)) {
+                LOGGER.warn(GlyphManager.MARKER, "Cannot redirect emoji '{}' to '{}'",
+                        redirect.getKey(), redirect.getValue());
+                continue;
+            }
+            map.put(input, map.get(target));
+        }
         LOGGER.info(GlyphManager.MARKER, "Scanned emoji map size: {}",
                 map.size());
         if (!files.isEmpty()) {
@@ -252,6 +258,43 @@ public class FontResourceManager implements PreparableReloadListener {
         } else {
             LOGGER.info(GlyphManager.MARKER, "No Emoji font was found");
         }
+    }
+
+    /**
+     * Build the lookup key for an emoji image file name without extension,
+     * e.g. {@code "1f1fa_1f1f8"}. Returns null if the name is invalid.
+     */
+    @Nullable
+    private static String buildEmojiSequence(@Nonnull String name) {
+        var codes = name.split("_");
+        int length = codes.length;
+        if (length == 0) {
+            return null;
+        }
+        // double the size, we may add vs16
+        var cps = new int[length << 1];
+        int n = 0;
+        for (int i = 0; i < length; i++) {
+            try {
+                int c = Integer.parseInt(codes[i], 16);
+                if (!Character.isValidCodePoint(c)) {
+                    return null;
+                }
+                boolean ec = Emoji.isEmoji(c);
+                boolean ecc = isEmoji_ModernUnicodeWorkaround(c);
+                if (i == 0 && !ec && !ecc) {
+                    return null;
+                }
+                cps[n++] = c;
+                // require vs16 for color emoji, otherwise grayscale
+                if (ec && !Emoji.isEmojiPresentation(c)) {
+                    cps[n++] = Emoji.VARIATION_SELECTOR_16;
+                }
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return new String(cps, 0, n);
     }
 
     // SYNC, on UI thread
