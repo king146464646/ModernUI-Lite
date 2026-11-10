@@ -382,7 +382,18 @@ public abstract class ModernUIClient extends ModernUI {
         // same semantics as TextLayoutEngine, the resource pack emoji (vanilla
         // font definitions) match first, the built-in emoji font is the fallback
         boolean resourcePackFirst = sAllowResourcePackEmoji;
-        if (emojiFont != null && !resourcePackFirst) {
+        if (resourcePackFirst) {
+            if (FontResourceManager.getInstance() instanceof TextLayoutEngine engine) {
+                FontFamily[] vanilla = engine.getVanillaTypefaceFamilies();
+                if (vanilla != null) {
+                    for (FontFamily family : vanilla) {
+                        if (family.isColorEmojiFont()) {
+                            families.add(family);
+                        }
+                    }
+                }
+            }
+        } else if (emojiFont != null) {
             families.add(new FontFamily(emojiFont));
         }
         String first = sFirstFontFamily;
@@ -399,16 +410,6 @@ public abstract class ModernUIClient extends ModernUI {
                     firstSetter, firstLoad);
         }
         if (emojiFont != null && resourcePackFirst) {
-            if (FontResourceManager.getInstance() instanceof TextLayoutEngine engine) {
-                FontFamily[] vanilla = engine.getVanillaTypefaceFamilies();
-                if (vanilla != null) {
-                    for (FontFamily family : vanilla) {
-                        if (family.isColorEmojiFont()) {
-                            families.add(family);
-                        }
-                    }
-                }
-            }
             families.add(new FontFamily(emojiFont));
         }
         return Typeface.createTypeface(families.toArray(new FontFamily[0]));
