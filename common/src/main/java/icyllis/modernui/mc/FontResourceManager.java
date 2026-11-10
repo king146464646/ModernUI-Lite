@@ -228,8 +228,10 @@ public class FontResourceManager implements PreparableReloadListener {
             }
             if (!map.containsKey(sequence)) {
                 // 1-based as glyph ID, see also GlyphManager.cacheEmoji()
-                map.put(sequence, map.size() + 1);
+                int gid = map.size() + 1;
+                map.put(sequence, gid);
                 files.add(fileName);
+                putPlainFlag(map, sequence, gid);
             }
         }
         for (var redirect : FLAG_REDIRECTS.entrySet()) {
@@ -240,7 +242,9 @@ public class FontResourceManager implements PreparableReloadListener {
                         redirect.getKey(), redirect.getValue());
                 continue;
             }
-            map.put(input, map.get(target));
+            int gid = map.get(target);
+            map.put(input, gid);
+            putPlainFlag(map, input, gid);
         }
         LOGGER.info(GlyphManager.MARKER, "Scanned emoji map size: {}",
                 map.size());
@@ -295,6 +299,22 @@ public class FontResourceManager implements PreparableReloadListener {
             }
         }
         return new String(cps, 0, n);
+    }
+
+    private static void putPlainFlag(@Nonnull Object2IntOpenHashMap<CharSequence> map,
+                                     @Nonnull String sequence, int glyphId) {
+        if (sequence.isEmpty() ||
+                !Emoji.isRegionalIndicatorSymbol(Character.codePointAt(sequence, 0))) {
+            return;
+        }
+        var sb = new StringBuilder(sequence.length());
+        for (int i = 0; i < sequence.length(); i++) {
+            char c = sequence.charAt(i);
+            if (c != Emoji.VARIATION_SELECTOR_15 && c != Emoji.VARIATION_SELECTOR_16) {
+                sb.append(c);
+            }
+        }
+        map.putIfAbsent(sb.toString(), glyphId);
     }
 
     // SYNC, on UI thread
