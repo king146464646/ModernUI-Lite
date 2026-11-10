@@ -501,6 +501,15 @@ public class TextLayoutEngine extends FontResourceManager
             EmojiFont emojiFont = getEmojiFont();
             FontFamily emojiFamily = emojiFont != null ? new FontFamily(emojiFont) : null;
             boolean resourcePackFirst = ModernUIClient.sAllowResourcePackEmoji;
+            if (resourcePackFirst) {
+                // resource pack emoji (vanilla font definitions) match first,
+                // so they win over the selected typeface and text fonts
+                for (FontFamily family : defaultFonts) {
+                    if (mResourcePackFamilies.contains(family) && family.isColorEmojiFont()) {
+                        composed.add(family);
+                    }
+                }
+            }
             if (!ModernUIClient.isVanillaFontSelected()) {
                 for (FontFamily family : ModernUI.getSelectedTypeface().getFamilies()) {
                     if (resourcePackFirst &&
@@ -509,7 +518,8 @@ public class TextLayoutEngine extends FontResourceManager
                     }
                     composed.add(family);
                 }
-            } else if (emojiFamily != null && !resourcePackFirst) {
+            }
+            if (emojiFamily != null && !resourcePackFirst) {
                 composed.add(emojiFamily);
             }
             composed.addAll(defaultFonts);
@@ -620,7 +630,8 @@ public class TextLayoutEngine extends FontResourceManager
             boolean exclusive = behavior == DEFAULT_FONT_BEHAVIOR_ONLY_EXCLUDE;
             for (FontFamily family : mRawDefaultFontCollection.getFamilies()) {
                 if (!isFamilyEnabled(family, filters, options) ||
-                        isResourcePackFontExcluded(family)) {
+                        isResourcePackFontExcluded(family) ||
+                        isResourcePackEmojiExcluded(family)) {
                     continue;
                 }
                 String name = family.getFamilyName();
@@ -634,7 +645,8 @@ public class TextLayoutEngine extends FontResourceManager
             // legacy matching, exclude vanilla fonts
             for (FontFamily family : mRawDefaultFontCollection.getFamilies()) {
                 if (!isFamilyEnabled(family, filters, options) ||
-                        isResourcePackFontExcluded(family)) {
+                        isResourcePackFontExcluded(family) ||
+                        isResourcePackEmojiExcluded(family)) {
                     continue;
                 }
                 switch (family.getFamilyName()) {
@@ -671,6 +683,14 @@ public class TextLayoutEngine extends FontResourceManager
                 !family.isColorEmojiFont();
     }
 
+    private boolean isResourcePackEmojiExcluded(@Nonnull FontFamily family) {
+        // resource pack emoji provided through vanilla font definitions are
+        // governed by the separate allowResourcePackEmoji option
+        return !ModernUIClient.sAllowResourcePackEmoji &&
+                mResourcePackFamilies.contains(family) &&
+                family.isColorEmojiFont();
+    }
+
     @Nonnull
     private static Set<FontOption> currentFontOptions() {
         EnumSet<FontOption> options = EnumSet.noneOf(FontOption.class);
@@ -697,7 +717,8 @@ public class TextLayoutEngine extends FontResourceManager
         var result = new ArrayList<FontFamily>(list.size());
         for (var family : list) {
             if (isFamilyEnabled(family, filters, options) &&
-                    !isResourcePackFontExcluded(family)) {
+                    !isResourcePackFontExcluded(family) &&
+                    !isResourcePackEmojiExcluded(family)) {
                 result.add(family);
             }
         }
