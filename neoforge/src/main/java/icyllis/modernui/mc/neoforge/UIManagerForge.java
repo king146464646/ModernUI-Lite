@@ -271,14 +271,18 @@ public final class UIManagerForge extends UIManager implements LifecycleOwner {
             }*/
 
             if (TooltipRenderer.sStyle == Config.TooltipStyle.VANILLA) {
-                // vanilla rendering is canceled below, so post the color event
-                // ourselves to let mods customize the vanilla style background
-                var color = ClientHooks.onRenderTooltipColor(event.getItemStack(), event.getGraphics(),
-                        event.getX(), event.getY(), event.getFont(), event.getComponents());
-                TooltipRenderer.sVanillaBackgroundStart = color.getBackgroundStart();
-                TooltipRenderer.sVanillaBackgroundEnd = color.getBackgroundEnd();
-                TooltipRenderer.sVanillaBorderStart = color.getBorderStart();
-                TooltipRenderer.sVanillaBorderEnd = color.getBorderEnd();
+                if (TooltipRenderer.sModTooltipColor) {
+                    // vanilla rendering is canceled below, so post the color event
+                    // ourselves to let mods customize the vanilla style background
+                    var color = ClientHooks.onRenderTooltipColor(event.getItemStack(), event.getGraphics(),
+                            event.getX(), event.getY(), event.getFont(), event.getComponents());
+                    TooltipRenderer.sVanillaBackgroundStart = color.getBackgroundStart();
+                    TooltipRenderer.sVanillaBackgroundEnd = color.getBackgroundEnd();
+                    TooltipRenderer.sVanillaBorderStart = color.getBorderStart();
+                    TooltipRenderer.sVanillaBorderEnd = color.getBorderEnd();
+                } else {
+                    TooltipRenderer.resetVanillaColors();
+                }
             }
 
             drawExtTooltip(event.getItemStack(), event.getGraphics(),

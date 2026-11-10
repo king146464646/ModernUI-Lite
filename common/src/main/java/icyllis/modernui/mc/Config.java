@@ -93,6 +93,7 @@ public final class Config {
         public final ConfigItem<List<? extends String>> mBackgroundColor;
         public final ConfigItem<Boolean> mTooltip;
         public final ConfigItem<TooltipStyle> mTooltipStyle;
+        public final ConfigItem<Boolean> mAllowModTooltipBackground;
         public final ConfigItem<Boolean> mRoundedTooltip;
         public final ConfigItem<Boolean> mCenterTooltipTitle;
         public final ConfigItem<Boolean> mTooltipTitleBreak;
@@ -131,6 +132,7 @@ public final class Config {
         public final ConfigItem<List<? extends String>> mFallbackFontFamilyList;
         public final ConfigItem<List<? extends String>> mFontRegistrationList;
         public final ConfigItem<Boolean> mAllowResourcePackEmoji;
+        public final ConfigItem<Boolean> mAllowResourcePackFont;
         public final ConfigItem<Boolean> mLinearMetrics;
         public final ConfigItem<Boolean> mEmojiShortcodes;
 
@@ -145,6 +147,7 @@ public final class Config {
             mBackgroundColor = get(map, "mBackgroundColor");
             mTooltip = get(map, "mTooltip");
             mTooltipStyle = get(map, "mTooltipStyle");
+            mAllowModTooltipBackground = get(map, "mAllowModTooltipBackground");
             mRoundedTooltip = get(map, "mRoundedTooltip");
             mCenterTooltipTitle = get(map, "mCenterTooltipTitle");
             mTooltipTitleBreak = get(map, "mTooltipTitleBreak");
@@ -183,6 +186,7 @@ public final class Config {
             mFallbackFontFamilyList = get(map, "mFallbackFontFamilyList");
             mFontRegistrationList = get(map, "mFontRegistrationList");
             mAllowResourcePackEmoji = get(map, "mAllowResourcePackEmoji");
+            mAllowResourcePackFont = get(map, "mAllowResourcePackFont");
             mLinearMetrics = get(map, "mLinearMetrics");
             mEmojiShortcodes = get(map, "mEmojiShortcodes");
         }
@@ -226,6 +230,9 @@ public final class Config {
             TooltipRenderer.sTooltip = mTooltip.get();
             if (mTooltipStyle != null) {
                 TooltipRenderer.sStyle = mTooltipStyle.get();
+            }
+            if (mAllowModTooltipBackground != null) {
+                TooltipRenderer.sModTooltipColor = mAllowModTooltipBackground.get();
             }
 
             inColors = mTooltipFill.get();
@@ -341,6 +348,7 @@ public final class Config {
             }
 
             ModernUIClient.sAllowResourcePackEmoji = mAllowResourcePackEmoji.get();
+            ModernUIClient.sAllowResourcePackFont = mAllowResourcePackFont.get();
             ModernUIClient.sEmojiShortcodes = mEmojiShortcodes.get();
             ModernUIClient.sFirstFontFamily = mFirstFontFamily.get();
             ModernUIClient.sFallbackFontFamilyList = mFallbackFontFamilyList.get();

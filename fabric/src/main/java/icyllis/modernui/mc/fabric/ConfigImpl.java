@@ -282,6 +282,7 @@ public final class ConfigImpl {
         public final ModConfigSpec.ConfigValue<List<? extends String>> mFallbackFontFamilyList;
         public final ModConfigSpec.ConfigValue<List<? extends String>> mFontRegistrationList;
         public final ModConfigSpec.BooleanValue mAllowResourcePackEmoji;
+        public final ModConfigSpec.BooleanValue mAllowResourcePackFont;
         public final ModConfigSpec.BooleanValue mLinearMetrics;
         public final ModConfigSpec.BooleanValue mEmojiShortcodes;
 
@@ -573,6 +574,10 @@ public final class ConfigImpl {
                             "Whether to allow resource packs to provide emoji through vanilla font definitions.",
                             "When enabled, emoji from resource packs take priority over Modern UI's built-in emoji.")
                     .define("allowResourcePackEmoji", true);
+            mAllowResourcePackFont = builder.comment(
+                            "Whether to allow resource packs to change fonts through vanilla font definitions.",
+                            "Only applies when the Minecraft font is selected as the first font.")
+                    .define("allowResourcePackFont", true);
             mLinearMetrics = builder.comment(
                             "When enabled, text layout uses fractional metrics with no font hinting and applies sub-pixel positioning.",
                             "When disabled, text layout uses integer metrics with full font hinting.")

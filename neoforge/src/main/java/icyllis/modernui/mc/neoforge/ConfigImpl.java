@@ -233,6 +233,7 @@ public final class ConfigImpl {
         public final ModConfigSpec.ConfigValue<List<? extends String>> mBackgroundColor;
         public final ModConfigSpec.BooleanValue mTooltip;
         public final ModConfigSpec.EnumValue<Config.TooltipStyle> mTooltipStyle;
+        public final ModConfigSpec.BooleanValue mAllowModTooltipBackground;
         public final ModConfigSpec.BooleanValue mRoundedTooltip;
         public final ModConfigSpec.BooleanValue mCenterTooltipTitle;
         public final ModConfigSpec.BooleanValue mTooltipTitleBreak;
@@ -279,6 +280,7 @@ public final class ConfigImpl {
         public final ModConfigSpec.ConfigValue<List<? extends String>> mFallbackFontFamilyList;
         public final ModConfigSpec.ConfigValue<List<? extends String>> mFontRegistrationList;
         public final ModConfigSpec.BooleanValue mAllowResourcePackEmoji;
+        public final ModConfigSpec.BooleanValue mAllowResourcePackFont;
         public final ModConfigSpec.BooleanValue mLinearMetrics;
 
         /*public final ModConfigSpec.BooleanValue mSkipGLCapsError;
@@ -353,6 +355,10 @@ public final class ConfigImpl {
                             "VANILLA: Vanilla appearance, keeping automatic scrolling when out of screen.",
                             "MODERN: Modern UI's own look and rendering optimizations.")
                     .defineEnum("style", Config.TooltipStyle.VANILLA);
+            mAllowModTooltipBackground = builder.comment(
+                            "Whether to allow mods to change the vanilla style tooltip background color",
+                            "through RenderTooltipEvent.Color. Only applies when the tooltip style is VANILLA.")
+                    .define("allowModTooltipBackground", true);
             mRoundedTooltip = builder.comment(
                             "Whether to use rounded tooltip shapes, or to use vanilla style.")
                     .define("roundedShape", true);
@@ -551,6 +557,10 @@ public final class ConfigImpl {
                             "Whether to allow resource packs to provide emoji through vanilla font definitions.",
                             "When enabled, emoji from resource packs take priority over Modern UI's built-in emoji.")
                     .define("allowResourcePackEmoji", true);
+            mAllowResourcePackFont = builder.comment(
+                            "Whether to allow resource packs to change fonts through vanilla font definitions.",
+                            "Only applies when the Minecraft font is selected as the first font.")
+                    .define("allowResourcePackFont", true);
             mLinearMetrics = builder.comment(
                             "When enabled, text layout uses fractional metrics with no font hinting and applies sub-pixel positioning.",
                             "When disabled, text layout uses integer metrics with full font hinting.")

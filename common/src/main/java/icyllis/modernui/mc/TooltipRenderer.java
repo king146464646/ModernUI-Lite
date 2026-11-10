@@ -51,10 +51,21 @@ public final class TooltipRenderer implements ScrollController.IListener {
     public static volatile Config.TooltipStyle sStyle = Config.TooltipStyle.VANILLA;
 
     // vanilla style colors, may be overridden by mods via RenderTooltipEvent.Color
-    public static volatile int sVanillaBackgroundStart = 0xF0100010;
-    public static volatile int sVanillaBackgroundEnd = 0xF0100010;
-    public static volatile int sVanillaBorderStart = 0x505000FF;
-    public static volatile int sVanillaBorderEnd = 0x5028007F;
+    private static final int DEFAULT_BACKGROUND = 0xF0100010;
+    private static final int DEFAULT_BORDER_TOP = 0x505000FF;
+    private static final int DEFAULT_BORDER_BOTTOM = 0x5028007F;
+    public static volatile boolean sModTooltipColor = true;
+    public static volatile int sVanillaBackgroundStart = DEFAULT_BACKGROUND;
+    public static volatile int sVanillaBackgroundEnd = DEFAULT_BACKGROUND;
+    public static volatile int sVanillaBorderStart = DEFAULT_BORDER_TOP;
+    public static volatile int sVanillaBorderEnd = DEFAULT_BORDER_BOTTOM;
+
+    public static void resetVanillaColors() {
+        sVanillaBackgroundStart = DEFAULT_BACKGROUND;
+        sVanillaBackgroundEnd = DEFAULT_BACKGROUND;
+        sVanillaBorderStart = DEFAULT_BORDER_TOP;
+        sVanillaBorderEnd = DEFAULT_BORDER_BOTTOM;
+    }
 
     public static final int[] sFillColor = new int[4];
     public static final int[] sStrokeColor = new int[4];

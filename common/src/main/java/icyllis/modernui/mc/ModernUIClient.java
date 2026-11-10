@@ -91,6 +91,7 @@ public abstract class ModernUIClient extends ModernUI {
     public static volatile boolean sRemoveTelemetrySession;
     public static volatile float sFontScale = 1;
     public static volatile boolean sAllowResourcePackEmoji = true;
+    public static volatile boolean sAllowResourcePackFont = true;
     public static volatile boolean sEmojiShortcodes = true;
     public static final String VANILLA_FONT_FAMILY = "minecraft:default";
     public static volatile String sFirstFontFamily;

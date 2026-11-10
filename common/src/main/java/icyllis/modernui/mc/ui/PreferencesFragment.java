@@ -105,6 +105,16 @@ public class PreferencesFragment extends Fragment {
         }
     }
 
+    @Nullable
+    View mResourcePackFontOption;
+
+    void updateResourcePackFontOption() {
+        if (mResourcePackFontOption != null) {
+            ThemeControl.setViewAndChildrenEnabled(mResourcePackFontOption,
+                    ModernUIClient.isVanillaFontSelected());
+        }
+    }
+
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable DataSet savedInstanceState) {
@@ -417,6 +427,7 @@ public class PreferencesFragment extends Fragment {
                         }
                     }
                     updateShadowOffsetOption();
+                    updateResourcePackFontOption();
                 };
                 onFontChanged.run();
                 value.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
@@ -449,17 +460,14 @@ public class PreferencesFragment extends Fragment {
             category.addView(firstLine, params);
 
             {
-                TextView hint = new TextView(context);
-                hint.setText(I18n.get("modernui.center.font.resourcePackHint"));
-                hint.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
-                hint.setTextSize(12);
-                if (context.getTheme().resolveAttribute(R.ns, R.attr.colorOnSurfaceVariant, value, true)) {
-                    hint.setTextColor(value.data);
-                }
-
-                var hintParams = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
-                hintParams.setMargins(dp6, hint.dp(4), dp6, 0);
-                category.addView(hint, hintParams);
+                var option = new BooleanOption(context, "modernui.center.font.resourcePackFont",
+                        Config.CLIENT.mAllowResourcePackFont, () -> {
+                    mOnClientConfigChanged.run();
+                    reloadDefaultTypeface(context, null);
+                })
+                        .create(category);
+                mResourcePackFontOption = option;
+                updateResourcePackFontOption();
             }
 
             content.addView(category);
@@ -514,11 +522,15 @@ public class PreferencesFragment extends Fragment {
 
         final View[] tooltipCategories = new View[2];
         final View[] modernStyleOnly = new View[2];
+        final View[] vanillaStyleOnly = new View[1];
         Runnable updateModernStyleOptions = () -> {
-            boolean enabled = Config.CLIENT.mTooltip.get() &&
-                    Config.CLIENT.mTooltipStyle.get() == Config.TooltipStyle.MODERN;
+            boolean tooltipOn = Config.CLIENT.mTooltip.get();
+            boolean modern = Config.CLIENT.mTooltipStyle.get() == Config.TooltipStyle.MODERN;
             for (var v : modernStyleOnly) {
-                ThemeControl.setViewAndChildrenEnabled(v, enabled);
+                ThemeControl.setViewAndChildrenEnabled(v, tooltipOn && modern);
+            }
+            if (vanillaStyleOnly[0] != null) {
+                ThemeControl.setViewAndChildrenEnabled(vanillaStyleOnly[0], tooltipOn && !modern);
             }
         };
 
@@ -576,7 +588,7 @@ public class PreferencesFragment extends Fragment {
         }
 
         content.addView(tooltipCategories[0] = createTooltipCategory(
-                content, modernStyleOnly, updateModernStyleOptions));
+                content, modernStyleOnly, vanillaStyleOnly, updateModernStyleOptions));
         content.addView(tooltipCategories[1] = createTooltipBorderCategory(content));
         modernStyleOnly[1] = tooltipCategories[1];
         for (var v : tooltipCategories) {
@@ -634,6 +646,7 @@ public class PreferencesFragment extends Fragment {
 
     public LinearLayout createTooltipCategory(@NonNull ViewGroup page,
                                               @NonNull View[] modernStyleOnly,
+                                              @NonNull View[] vanillaStyleOnly,
                                               @NonNull Runnable onStyleChanged) {
         var context = page.getContext();
         var category = createCategoryList(page, "modernui.center.category.tooltip");
@@ -648,6 +661,16 @@ public class PreferencesFragment extends Fragment {
                     onStyleChanged.run();
                 })
                 .create(category);
+
+        // absent on Fabric, which has no tooltip color event
+        if (Config.CLIENT.mAllowModTooltipBackground != null) {
+            vanillaStyleOnly[0] = new BooleanOption(context, "modernui.center.tooltip.modTooltipColor",
+                    Config.CLIENT.mAllowModTooltipBackground, () -> {
+                onChanged.run();
+                onStyleChanged.run();
+            })
+                    .create(category);
+        }
 
         new BooleanOption(context, "modernui.center.tooltip.exactPositioning",
                 Config.CLIENT.mExactTooltipPositioning, onChanged)
