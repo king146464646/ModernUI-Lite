@@ -32,8 +32,15 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.util.StringDecomposer;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import java.util.Map;
+import java.util.WeakHashMap;
 
 public class ThemeControl {
+
+    // original tooltip text of views temporarily disabled with a reason
+    private static final Map<View, CharSequence> sDisabledTooltips = new WeakHashMap<>();
 
     /*public static final int BACKGROUND_COLOR = 0xc0292a2c;
     public static final int THEME_COLOR = 0xffcda398;
@@ -99,14 +106,35 @@ public class ThemeControl {
     }
 
     public static void setViewAndChildrenEnabled(View view, boolean enabled) {
+        setViewAndChildrenEnabled(view, enabled, null);
+    }
+
+    /**
+     * Recursively enables or disables the view. When disabled with a tooltip
+     * given, the view's tooltip is replaced by it (so hovering a greyed-out
+     * option explains why it is unavailable); the original tooltip is restored
+     * once the view is enabled again.
+     */
+    public static void setViewAndChildrenEnabled(View view, boolean enabled,
+                                                 @Nullable CharSequence disabledTooltip) {
         if (view != null) {
             view.setEnabled(enabled);
+            if (enabled) {
+                if (sDisabledTooltips.containsKey(view)) {
+                    view.setTooltipText(sDisabledTooltips.remove(view));
+                }
+            } else if (disabledTooltip != null) {
+                if (!sDisabledTooltips.containsKey(view)) {
+                    sDisabledTooltips.put(view, view.getTooltipText());
+                }
+                view.setTooltipText(disabledTooltip);
+            }
         }
         if (view instanceof ViewGroup vg) {
             int cc = vg.getChildCount();
             for (int i = 0; i < cc; i++) {
                 View v = vg.getChildAt(i);
-                setViewAndChildrenEnabled(v, enabled);
+                setViewAndChildrenEnabled(v, enabled, disabledTooltip);
             }
         }
     }

@@ -100,8 +100,12 @@ public class PreferencesFragment extends Fragment {
         if (mShadowOffsetOption != null) {
             boolean textEngineEnabled = !Boolean.parseBoolean(
                     ModernUIClient.getBootstrapProperty(ModernUIMod.BOOTSTRAP_DISABLE_TEXT_ENGINE));
-            ThemeControl.setViewAndChildrenEnabled(mShadowOffsetOption,
-                    textEngineEnabled && !ModernUIClient.isVanillaFontSelected());
+            boolean vanillaFont = ModernUIClient.isVanillaFontSelected();
+            boolean enabled = textEngineEnabled && !vanillaFont;
+            CharSequence reason = !textEngineEnabled
+                    ? I18n.get("modernui.disabled.textEngine")
+                    : (vanillaFont ? I18n.get("modernui.disabled.notVanillaFont") : null);
+            ThemeControl.setViewAndChildrenEnabled(mShadowOffsetOption, enabled, reason);
         }
     }
 
@@ -110,8 +114,9 @@ public class PreferencesFragment extends Fragment {
 
     void updateResourcePackFontOption() {
         if (mResourcePackFontOption != null) {
-            ThemeControl.setViewAndChildrenEnabled(mResourcePackFontOption,
-                    ModernUIClient.isVanillaFontSelected());
+            boolean vanillaFont = ModernUIClient.isVanillaFontSelected();
+            ThemeControl.setViewAndChildrenEnabled(mResourcePackFontOption, vanillaFont,
+                    vanillaFont ? null : I18n.get("modernui.disabled.vanillaFontOnly"));
         }
     }
 
@@ -526,11 +531,14 @@ public class PreferencesFragment extends Fragment {
         Runnable updateModernStyleOptions = () -> {
             boolean tooltipOn = Config.CLIENT.mTooltip.get();
             boolean modern = Config.CLIENT.mTooltipStyle.get() == Config.TooltipStyle.MODERN;
+            CharSequence tooltipOffTip = I18n.get("modernui.disabled.tooltipOff");
             for (var v : modernStyleOnly) {
-                ThemeControl.setViewAndChildrenEnabled(v, tooltipOn && modern);
+                ThemeControl.setViewAndChildrenEnabled(v, tooltipOn && modern,
+                        tooltipOn ? I18n.get("modernui.disabled.modernStyleOnly") : tooltipOffTip);
             }
             if (vanillaStyleOnly[0] != null) {
-                ThemeControl.setViewAndChildrenEnabled(vanillaStyleOnly[0], tooltipOn && !modern);
+                ThemeControl.setViewAndChildrenEnabled(vanillaStyleOnly[0], tooltipOn && !modern,
+                        tooltipOn ? I18n.get("modernui.disabled.vanillaStyleOnly") : tooltipOffTip);
             }
         };
 
@@ -573,7 +581,8 @@ public class PreferencesFragment extends Fragment {
                     Config.CLIENT.mTooltip.set(checked);
                     onChanged.run();
                     for (var v : tooltipCategories) {
-                        ThemeControl.setViewAndChildrenEnabled(v, checked);
+                        ThemeControl.setViewAndChildrenEnabled(v, checked,
+                                I18n.get("modernui.disabled.tooltipOff"));
                     }
                     updateModernStyleOptions.run();
                 });
@@ -592,7 +601,8 @@ public class PreferencesFragment extends Fragment {
         content.addView(tooltipCategories[1] = createTooltipBorderCategory(content));
         modernStyleOnly[1] = tooltipCategories[1];
         for (var v : tooltipCategories) {
-            ThemeControl.setViewAndChildrenEnabled(v, curTooltipEnabled);
+            ThemeControl.setViewAndChildrenEnabled(v, curTooltipEnabled,
+                    I18n.get("modernui.disabled.tooltipOff"));
         }
         updateModernStyleOptions.run();
 
@@ -625,7 +635,8 @@ public class PreferencesFragment extends Fragment {
                             Toast.LENGTH_SHORT
                     ).show();
                     for (var v : categories) {
-                        ThemeControl.setViewAndChildrenEnabled(v, checked);
+                        ThemeControl.setViewAndChildrenEnabled(v, checked,
+                                I18n.get("modernui.disabled.textEngine"));
                     }
                     updateShadowOffsetOption();
                 });
@@ -637,7 +648,8 @@ public class PreferencesFragment extends Fragment {
         content.addView(categories[0] = createTextLayoutCategory(content));
         content.addView(categories[1] = createTextRenderingCategory(content));
         for (var v : categories) {
-            ThemeControl.setViewAndChildrenEnabled(v, curTextEngineEnabled);
+            ThemeControl.setViewAndChildrenEnabled(v, curTextEngineEnabled,
+                    I18n.get("modernui.disabled.textEngine"));
         }
         updateShadowOffsetOption();
 

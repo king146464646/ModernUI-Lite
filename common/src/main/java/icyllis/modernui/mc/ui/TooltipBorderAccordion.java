@@ -74,7 +74,8 @@ public class TooltipBorderAccordion implements View.OnClickListener {
                 (value) -> {
                     Config.CLIENT.mRoundedTooltip.set(value);
                     for (var v : mRoundedDependants) {
-                        ThemeControl.setViewAndChildrenEnabled(v, value);
+                        ThemeControl.setViewAndChildrenEnabled(v, value,
+                                I18n.get("modernui.disabled.roundedShapes"));
                     }
                 }, mOnChanged)
                 .create(mContent);
@@ -107,7 +108,8 @@ public class TooltipBorderAccordion implements View.OnClickListener {
         assert ri == mRoundedDependants.length;
         if (!Config.CLIENT.mRoundedTooltip.get()) {
             for (var v : mRoundedDependants) {
-                ThemeControl.setViewAndChildrenEnabled(v, false);
+                ThemeControl.setViewAndChildrenEnabled(v, false,
+                        I18n.get("modernui.disabled.roundedShapes"));
             }
         }
         new PreferencesFragment.BooleanOption(mParent.getContext(), "modernui.center.tooltip.adaptiveColors",
