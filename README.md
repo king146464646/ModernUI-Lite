@@ -1,7 +1,7 @@
 # Modern UI for Minecraft
 [![CurseForge](http://cf.way2muchnoise.eu/full_352491_downloads.svg)](https://www.curseforge.com/minecraft/mc-mods/modern-ui)
 [![CurseForge](http://cf.way2muchnoise.eu/versions/For%20Minecraft_352491_all.svg)](https://www.curseforge.com/minecraft/mc-mods/modern-ui)
-### Removed features:
+### This project Removed features:
 * Home tab
 * OptiFine Zoom
 * GUI Scale
@@ -12,16 +12,19 @@
 * Game load notification sound
 ### If you need to use any of the above features, please use another mod instead.
 
-### Other removed features:
+### This project Other removed features:
 * Remove built-in fonts (you can still switch fonts, e.g. use system fonts or custom fonts)
-* Removed Color Emoji Option(but this is Enabled, and Support ResourcePack)
+* Remove Color Emoji Option(but this is Enabled)
 
-### New Features:
-* Add Vanilla Font(Default, Support ResourcePack)
+### This project add New Features:
+* Add Vanilla Font(Default)
 * Support Emoji 18(Unicode 18)
-* Add a Minecraft(Vanilla Tooltip) Modern Tooltip style (Default)(Supports automatic vertical scrolling when the content exceeds the screen and Support ResourcePack)
-* Add Modern Tooltip  Allow Mod Tooltip Background(Minecraft Tooltip style, NOT FABRIC)
+* Add a Minecraft(Vanilla Tooltip) Modern Tooltip style (Default)(Supports automatic vertical scrolling when the content exceeds the screen)
+* Add Modern Tooltip Allow Mod Tooltip Background(Minecraft Tooltip style, NOT FABRIC)
+* Add emoji support to the settings page
 * Add flag emoji support
+* Add mouse preview tooltip for disabled options
+* Add Resource Pack Font and emoji options
 
 ### Description
 Modern UI for Minecraft, is a Minecraft Mod that is based on [Modern UI Core Framework](https://github.com/BloCamLimb/ModernUI) and Modern UI Core Extensions.
