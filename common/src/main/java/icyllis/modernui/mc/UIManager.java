@@ -993,6 +993,42 @@ public abstract class UIManager implements LifecycleOwner {
         glfwSetCursor(mWindow.getWindow(), MemoryUtil.NULL);
     }
 
+    // Hooks only record tooltip requests here; Screen.renderWithTooltip draws
+    // them at TAIL so late mixins (e.g. creative tab banners) cannot cover them.
+    private final List<PendingTooltip> mPendingTooltips = new ArrayList<>(2);
+
+    public void enqueueExtTooltip(ItemStack itemStack,
+                                  GuiGraphics graphics,
+                                  List<ClientTooltipComponent> components,
+                                  int x, int y, Font font,
+                                  int screenWidth, int screenHeight,
+                                  ClientTooltipPositioner positioner) {
+        mPendingTooltips.add(new PendingTooltip(itemStack, graphics, components,
+                x, y, font, screenWidth, screenHeight, positioner));
+    }
+
+    public void clearPendingTooltips() {
+        mPendingTooltips.clear();
+    }
+
+    public void drawPendingTooltips() {
+        for (int i = 0; i < mPendingTooltips.size(); i++) {
+            PendingTooltip p = mPendingTooltips.get(i);
+            drawExtTooltip(p.itemStack(), p.graphics(), p.components(),
+                    p.x(), p.y(), p.font(), p.screenWidth(), p.screenHeight(),
+                    p.positioner());
+        }
+        mPendingTooltips.clear();
+    }
+
+    private record PendingTooltip(ItemStack itemStack,
+                                  GuiGraphics graphics,
+                                  List<ClientTooltipComponent> components,
+                                  int x, int y, Font font,
+                                  int screenWidth, int screenHeight,
+                                  ClientTooltipPositioner positioner) {
+    }
+
     public void drawExtTooltip(ItemStack itemStack,
                                GuiGraphics graphics,
                                List<ClientTooltipComponent> components,

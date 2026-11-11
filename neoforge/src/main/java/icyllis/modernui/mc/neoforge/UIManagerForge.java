@@ -285,7 +285,7 @@ public final class UIManagerForge extends UIManager implements LifecycleOwner {
                 }
             }
 
-            drawExtTooltip(event.getItemStack(), event.getGraphics(),
+            enqueueExtTooltip(event.getItemStack(), event.getGraphics(),
                     event.getComponents(),
                     event.getX(), event.getY(), event.getFont(),
                     event.getScreenWidth(), event.getScreenHeight(),

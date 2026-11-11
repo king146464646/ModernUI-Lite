@@ -127,7 +127,7 @@ public abstract class MixinGuiGraphics implements IModernGuiGraphics {
                                  CallbackInfo ci) {
         if (TooltipRenderer.sTooltip) {
             if (!components.isEmpty()) {
-                UIManager.getInstance().drawExtTooltip(modernUI_MC$tooltipStack,
+                UIManager.getInstance().enqueueExtTooltip(modernUI_MC$tooltipStack,
                         (GuiGraphics) (Object) this,
                         components, x, y, font,
                         guiWidth(), guiHeight(), positioner);

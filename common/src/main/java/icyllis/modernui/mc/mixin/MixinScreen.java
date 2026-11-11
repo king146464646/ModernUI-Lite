@@ -19,11 +19,14 @@
 package icyllis.modernui.mc.mixin;
 
 import icyllis.modernui.mc.BlurHandler;
+import icyllis.modernui.mc.UIManager;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import javax.annotation.Nonnull;
 
@@ -44,6 +47,18 @@ public class MixinScreen {
     @Shadow
     @Nullable
     protected Minecraft minecraft;*/
+
+    @Inject(method = "renderWithTooltip", at = @At("HEAD"))
+    private void clearPendingTooltips(@Nonnull GuiGraphics graphics, int mouseX,
+                                      int mouseY, float partialTick, CallbackInfo ci) {
+        UIManager.getInstance().clearPendingTooltips();
+    }
+
+    @Inject(method = "renderWithTooltip", at = @At("TAIL"))
+    private void drawPendingTooltips(@Nonnull GuiGraphics graphics, int mouseX,
+                                     int mouseY, float partialTick, CallbackInfo ci) {
+        UIManager.getInstance().drawPendingTooltips();
+    }
 
     @Redirect(
             method = "renderTransparentBackground",
