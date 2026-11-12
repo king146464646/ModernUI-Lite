@@ -25,12 +25,13 @@
 * Add flag emoji support
 * Add mouse preview tooltip for disabled options
 * Add Resource Pack Font and emoji options
+* Support for TTF provider properties
 
 ### This project fixed:
 * Fix some bugs in the original version
 
 ### Description
-Modern UI for Minecraft, is a Minecraft Mod that is based on [Modern UI Core Framework](https://github.com/BloCamLimb/ModernUI) and Modern UI Core Extensions.
+Modern UI for Minecraft, is a Minecraft Mod that is based on [Modern UI Core Framework](https://github.com/king146464646/ModernUI-Code) and Modern UI Core Extensions.
 It provides Modern UI bootstrap program in Minecraft environment and Modding API based on Forge/Fabric, 
 to make powerful Graphical User Interface in Minecraft.
 

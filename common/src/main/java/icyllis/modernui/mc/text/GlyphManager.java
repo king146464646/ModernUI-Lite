@@ -26,6 +26,7 @@ import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.Bitmap;
 import icyllis.modernui.graphics.BitmapFactory;
+import icyllis.modernui.graphics.text.AdjustedFont;
 import icyllis.modernui.graphics.text.EmojiFont;
 import icyllis.modernui.graphics.text.Font;
 import icyllis.modernui.graphics.text.FontCollection;
@@ -306,6 +307,11 @@ public class GlyphManager {
     @Nullable
     @RenderThread
     public GLBakedGlyph lookupGlyph(@Nonnull Font font, int fontSize, int glyphId) {
+        if (font instanceof AdjustedFont adjusted) {
+            // the atlas strike must be rasterized at the adjusted size
+            fontSize = (int) Math.round(adjusted.mapFontSize(fontSize));
+            font = adjusted.getBase();
+        }
         if (font instanceof OutlineFont) {
             java.awt.Font awtFont = ((OutlineFont) font).chooseFont(fontSize);
             long key = computeGlyphKey(awtFont, glyphId);
@@ -667,6 +673,10 @@ public class GlyphManager {
      */
     @Nullable
     public FastCharSet lookupFastChars(@Nonnull Font font, int fontSize, int glyphId) {
+        if (font instanceof AdjustedFont adjusted) {
+            fontSize = (int) Math.round(adjusted.mapFontSize(fontSize));
+            font = adjusted.getBase();
+        }
         if (!(font instanceof OutlineFont || font instanceof BitmapFont)) {
             // Emojis are not supported for obfuscated rendering
             return null;

@@ -1066,23 +1066,19 @@ public class TextLayoutEngine extends FontResourceManager
             }
             case TTF -> {
                 var ttf = (TrueTypeGlyphProviderDefinition) definition;
-                if (metadata.has("size")) {
-                    LOGGER.info(MARKER, "Ignore 'size={}' of providers[{}] in font '{}' in pack: '{}'",
-                            ttf.size(), index, name, sourcePackId);
-                }
-                if (metadata.has("oversample")) {
+                // vector rendering has no oversampling, report only non-default values
+                if (ttf.oversample() != 1.0f) {
                     LOGGER.info(MARKER, "Ignore 'oversample={}' of providers[{}] in font '{}' in pack: '{}'",
                             ttf.oversample(), index, name, sourcePackId);
                 }
-                if (metadata.has("shift")) {
-                    LOGGER.info(MARKER, "Ignore 'shift={}' of providers[{}] in font '{}' in pack: '{}'",
-                            ttf.shift(), index, name, sourcePackId);
+                FontFamily family = createTTF(ttf.location(), resources);
+                var shift = ttf.shift();
+                float scale = ttf.size() / 11.0f; // vanilla default size
+                if (scale != 1.0f || shift.x() != 0.0f || shift.y() != 0.0f || !ttf.skip().isEmpty()) {
+                    family = family.mapFonts(f -> new AdjustedFont(f, scale,
+                            shift.x(), shift.y(), ttf.skip()));
                 }
-                if (metadata.has("skip")) {
-                    LOGGER.info(MARKER, "Ignore 'skip={}' of providers[{}] in font '{}' in pack: '{}'",
-                            ttf.skip(), index, name, sourcePackId);
-                }
-                putFamily(bundle, createTTF(ttf.location(), resources), filter, sourcePackId);
+                putFamily(bundle, family, filter, sourcePackId);
             }
             case SPACE -> {
                 var spaceFont = SpaceFont.create(name, (SpaceProvider.Definition) definition);

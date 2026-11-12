@@ -117,23 +117,24 @@ public class StandardFontSet extends FontSet {
                 continue;
             }
             Font font = family.getClosestMatch(FontPaint.NORMAL);
+            Font base = font instanceof AdjustedFont adj ? adj.getBase() : font;
             // we must check BitmapFont first,
             // because codePoint may be an invalid Unicode code point
-            if (font instanceof BitmapFont bitmapFont) {
+            if (base instanceof BitmapFont bitmapFont) {
                 var glyph = bitmapFont.getGlyph(codePoint);
                 if (glyph != null) {
                     return glyph;
                 }
-            } else if (font instanceof SpaceFont spaceFont) {
+            } else if (base instanceof SpaceFont spaceFont) {
                 float adv = spaceFont.getAdvance(codePoint);
                 if (!Float.isNaN(adv)) {
                     return (GlyphInfo.SpaceGlyphInfo) () -> adv;
                 }
-            } else if (font instanceof OutlineFont outlineFont) {
+            } else if (base instanceof OutlineFont) {
                 // no variation selector
-                if (outlineFont.hasGlyph(codePoint, 0)) {
+                if (font.hasGlyph(codePoint, 0)) {
                     char[] chars = Character.toChars(codePoint);
-                    float adv = outlineFont.doSimpleLayout(
+                    float adv = font.doSimpleLayout(
                             chars,
                             0, chars.length,
                             mStandardPaint, null, null,
@@ -161,10 +162,11 @@ public class StandardFontSet extends FontSet {
                 continue;
             }
             Font font = family.getClosestMatch(FontPaint.NORMAL);
+            Font base = font instanceof AdjustedFont adj ? adj.getBase() : font;
             // we MUST check BitmapFont first,
             // because codePoint may be an invalid Unicode code point
             // but vanilla doesn't validate that
-            if (font instanceof BitmapFont bitmapFont) {
+            if (base instanceof BitmapFont bitmapFont) {
                 // bake glyph ourselves
                 var glyph = GlyphManager.getInstance().lookupGlyph(
                         bitmapFont,
@@ -192,12 +194,12 @@ public class StandardFontSet extends FontSet {
                 }
                 // no pixels
                 return EmptyGlyph.INSTANCE;
-            } else if (font instanceof SpaceFont) {
+            } else if (base instanceof SpaceFont) {
                 return EmptyGlyph.INSTANCE;
-            } else if (font instanceof OutlineFont outlineFont) {
+            } else if (base instanceof OutlineFont) {
                 char[] chars = Character.toChars(codePoint);
                 IntArrayList glyphs = new IntArrayList(1);
-                float adv = outlineFont.doSimpleLayout(
+                float adv = font.doSimpleLayout(
                         chars,
                         0, chars.length,
                         mStandardPaint, glyphs, null,
@@ -207,7 +209,7 @@ public class StandardFontSet extends FontSet {
                         glyphs.getInt(0) != 0) { // 0 is the missing glyph for TTF
                     // bake glyph ourselves
                     var glyph = GlyphManager.getInstance().lookupGlyph(
-                            outlineFont,
+                            font,
                             (int) mStandardPaint.getFontSize(),
                             glyphs.getInt(0)
                     );
