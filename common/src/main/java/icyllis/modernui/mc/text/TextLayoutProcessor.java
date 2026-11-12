@@ -889,7 +889,7 @@ public class TextLayoutProcessor {
             mPositions.elements()[glyphIndex << 1] += totalShift;
             if ((styleFlags & CharacterStyle.BOLD_MASK) != 0 &&
                     (font.getStyle() & FontPaint.BOLD) == 0) {
-                totalShift += (font instanceof BitmapFont ? 1.0f : 0.5f) * mResLevel;
+                totalShift += 0.5f * mResLevel;
                 fakeBoldCount++;
             }
         }

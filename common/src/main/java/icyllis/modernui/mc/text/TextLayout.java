@@ -493,7 +493,7 @@ public class TextLayout {
                 upSkew = 0.25f * ascent;
                 downSkew = 0.25f * (ascent - h);
             }
-            final float boldStep = font instanceof BitmapFont ? 1.0f : 0.5f;
+            final float boldStep = 0.5f;
             for (int pass = 0, passes = fakeBold ? 2 : 1; pass < passes; pass++) {
                 float boldOffset = pass * boldStep;
                 builder.addVertex(matrix, rx + boldOffset + upSkew, ry, 0)
@@ -649,7 +649,7 @@ public class TextLayout {
             }
             float uBloat = (glyph.u2 - glyph.u1) / glyph.width;
             float vBloat = (glyph.v2 - glyph.v1) / glyph.height;
-            final float boldStep = font instanceof BitmapFont ? 1.0f : 0.5f;
+            final float boldStep = 0.5f;
             for (int pass = 0, passes = fakeBold ? 2 : 1; pass < passes; pass++) {
                 float boldOffset = pass * boldStep;
                 builder.addVertex(matrix, rx + boldOffset - sBloat, ry - sBloat, 0.001f)
