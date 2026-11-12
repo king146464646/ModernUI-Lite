@@ -202,7 +202,6 @@ public class TextLayoutProcessor {
      * The total advance (horizontal width) of the processing text
      */
     private float mTotalAdvance;
-    private float mBoldShift;
     private int mResLevel;
 
     private final FontPaint mFontPaint = new FontPaint();
@@ -424,7 +423,6 @@ public class TextLayoutProcessor {
         mGlyphFlags.clear();
         mLineBoundaries.clear();
         mTotalAdvance = 0;
-        mBoldShift = 0;
         mHasEffect = false;
         //mHasFastDigit = false;
         mHasColorEmoji = false;
@@ -870,7 +868,7 @@ public class TextLayoutProcessor {
         );
 
         int fakeBoldCount = 0;
-        float shift = mBoldShift;
+        float totalShift = 0;
         for (int glyphIndex = glyphStart,
              glyphEnd = mGlyphs.size();
              glyphIndex < glyphEnd;
@@ -888,25 +886,25 @@ public class TextLayoutProcessor {
             }
             mGlyphFlags.add(glyphFlags);
 
-            mPositions.elements()[glyphIndex << 1] += shift;
+            mPositions.elements()[glyphIndex << 1] += totalShift;
             if ((styleFlags & CharacterStyle.BOLD_MASK) != 0 &&
                     (font.getStyle() & FontPaint.BOLD) == 0) {
-                shift += 0.5f * mResLevel;
+                totalShift += (font instanceof BitmapFont ? 1.0f : 0.5f) * mResLevel;
                 fakeBoldCount++;
             }
         }
-        mBoldShift = shift;
 
         if (fakeBoldCount > 0) {
             if (mComputeAdvances) {
                 float[] elements = mAdvances.elements();
+                float perChar = totalShift / fakeBoldCount;
                 for (int i = start, added = 0;
                      i < limit && added < fakeBoldCount;
                      i++, added++) {
-                    elements[i] += 0.5f * mResLevel;
+                    elements[i] += perChar;
                 }
             }
-            advance += fakeBoldCount * 0.5f * mResLevel;
+            advance += totalShift;
         }
         mTotalAdvance += advance;
         /*} else {

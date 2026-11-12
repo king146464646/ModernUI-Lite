@@ -389,8 +389,9 @@ public class TextLayout {
             final int mode;
             final int texture;
             boolean fakeItalic = false;
+            final Font font = getFont(i);
             final boolean fakeBold = (bits & CharacterStyle.BOLD_MASK) != 0
-                    && (getFont(i).getStyle() & FontPaint.BOLD) == 0;
+                    && (font.getStyle() & FontPaint.BOLD) == 0;
             int ascent = 0;
             net.minecraft.client.gui.Font.DisplayMode vanillaDisplayMode = null;
             boolean isBitmapFont = false;
@@ -492,8 +493,9 @@ public class TextLayout {
                 upSkew = 0.25f * ascent;
                 downSkew = 0.25f * (ascent - h);
             }
+            final float boldStep = font instanceof BitmapFont ? 1.0f : 0.5f;
             for (int pass = 0, passes = fakeBold ? 2 : 1; pass < passes; pass++) {
-                float boldOffset = pass * 0.5f;
+                float boldOffset = pass * boldStep;
                 builder.addVertex(matrix, rx + boldOffset + upSkew, ry, 0)
                         .setColor(r, g, b, a)
                         .setUv(glyph.u1, glyph.v1)
@@ -614,8 +616,9 @@ public class TextLayout {
             final float w;
             final float h;
             final int texture;
+            final Font font = getFont(i);
             final boolean fakeBold = (bits & CharacterStyle.BOLD_MASK) != 0
-                    && (getFont(i).getStyle() & FontPaint.BOLD) == 0;
+                    && (font.getStyle() & FontPaint.BOLD) == 0;
             if ((bits & CharacterStyle.ANY_BITMAP_REPLACEMENT) != 0) {
                 continue;
             } else {
@@ -646,8 +649,9 @@ public class TextLayout {
             }
             float uBloat = (glyph.u2 - glyph.u1) / glyph.width;
             float vBloat = (glyph.v2 - glyph.v1) / glyph.height;
+            final float boldStep = font instanceof BitmapFont ? 1.0f : 0.5f;
             for (int pass = 0, passes = fakeBold ? 2 : 1; pass < passes; pass++) {
-                float boldOffset = pass * 0.5f;
+                float boldOffset = pass * boldStep;
                 builder.addVertex(matrix, rx + boldOffset - sBloat, ry - sBloat, 0.001f)
                         .setColor(r, g, b, a)
                         .setUv(glyph.u1 - uBloat, glyph.v1 - vBloat)
