@@ -21,6 +21,7 @@ package icyllis.modernui.mc.text;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import icyllis.modernui.graphics.MathUtil;
 import icyllis.modernui.graphics.text.Font;
+import icyllis.modernui.graphics.text.FontPaint;
 import icyllis.modernui.util.SparseArray;
 import net.minecraft.client.renderer.MultiBufferSource;
 import org.joml.Matrix4f;
@@ -388,6 +389,8 @@ public class TextLayout {
             final int mode;
             final int texture;
             boolean fakeItalic = false;
+            final boolean fakeBold = (bits & CharacterStyle.BOLD_MASK) != 0
+                    && (getFont(i).getStyle() & FontPaint.BOLD) == 0;
             int ascent = 0;
             net.minecraft.client.gui.Font.DisplayMode vanillaDisplayMode = null;
             boolean isBitmapFont = false;
@@ -489,22 +492,25 @@ public class TextLayout {
                 upSkew = 0.25f * ascent;
                 downSkew = 0.25f * (ascent - h);
             }
-            builder.addVertex(matrix, rx + upSkew, ry, 0)
-                    .setColor(r, g, b, a)
-                    .setUv(glyph.u1, glyph.v1)
-                    .setLight(packedLight);
-            builder.addVertex(matrix, rx + downSkew, ry + h, 0)
-                    .setColor(r, g, b, a)
-                    .setUv(glyph.u1, glyph.v2)
-                    .setLight(packedLight);
-            builder.addVertex(matrix, rx + w + downSkew, ry + h, 0)
-                    .setColor(r, g, b, a)
-                    .setUv(glyph.u2, glyph.v2)
-                    .setLight(packedLight);
-            builder.addVertex(matrix, rx + w + upSkew, ry, 0)
-                    .setColor(r, g, b, a)
-                    .setUv(glyph.u2, glyph.v1)
-                    .setLight(packedLight);
+            for (int pass = 0, passes = fakeBold ? 2 : 1; pass < passes; pass++) {
+                float boldOffset = pass * 0.5f;
+                builder.addVertex(matrix, rx + boldOffset + upSkew, ry, 0)
+                        .setColor(r, g, b, a)
+                        .setUv(glyph.u1, glyph.v1)
+                        .setLight(packedLight);
+                builder.addVertex(matrix, rx + boldOffset + downSkew, ry + h, 0)
+                        .setColor(r, g, b, a)
+                        .setUv(glyph.u1, glyph.v2)
+                        .setLight(packedLight);
+                builder.addVertex(matrix, rx + boldOffset + w + downSkew, ry + h, 0)
+                        .setColor(r, g, b, a)
+                        .setUv(glyph.u2, glyph.v2)
+                        .setLight(packedLight);
+                builder.addVertex(matrix, rx + boldOffset + w + upSkew, ry, 0)
+                        .setColor(r, g, b, a)
+                        .setUv(glyph.u2, glyph.v1)
+                        .setLight(packedLight);
+            }
         }
 
         builder = null;
@@ -608,6 +614,8 @@ public class TextLayout {
             final float w;
             final float h;
             final int texture;
+            final boolean fakeBold = (bits & CharacterStyle.BOLD_MASK) != 0
+                    && (getFont(i).getStyle() & FontPaint.BOLD) == 0;
             if ((bits & CharacterStyle.ANY_BITMAP_REPLACEMENT) != 0) {
                 continue;
             } else {
@@ -638,22 +646,25 @@ public class TextLayout {
             }
             float uBloat = (glyph.u2 - glyph.u1) / glyph.width;
             float vBloat = (glyph.v2 - glyph.v1) / glyph.height;
-            builder.addVertex(matrix, rx - sBloat, ry - sBloat, 0.001f)
-                    .setColor(r, g, b, a)
-                    .setUv(glyph.u1 - uBloat, glyph.v1 - vBloat)
-                    .setLight(packedLight);
-            builder.addVertex(matrix, rx - sBloat, ry + h + sBloat, 0.001f)
-                    .setColor(r, g, b, a)
-                    .setUv(glyph.u1 - uBloat, glyph.v2 + vBloat)
-                    .setLight(packedLight);
-            builder.addVertex(matrix, rx + w + sBloat, ry + h + sBloat, 0)
-                    .setColor(r, g, b, a)
-                    .setUv(glyph.u2 + uBloat, glyph.v2 + vBloat)
-                    .setLight(packedLight);
-            builder.addVertex(matrix, rx + w + sBloat, ry - sBloat, 0)
-                    .setColor(r, g, b, a)
-                    .setUv(glyph.u2 + uBloat, glyph.v1 - vBloat)
-                    .setLight(packedLight);
+            for (int pass = 0, passes = fakeBold ? 2 : 1; pass < passes; pass++) {
+                float boldOffset = pass * 0.5f;
+                builder.addVertex(matrix, rx + boldOffset - sBloat, ry - sBloat, 0.001f)
+                        .setColor(r, g, b, a)
+                        .setUv(glyph.u1 - uBloat, glyph.v1 - vBloat)
+                        .setLight(packedLight);
+                builder.addVertex(matrix, rx + boldOffset - sBloat, ry + h + sBloat, 0.001f)
+                        .setColor(r, g, b, a)
+                        .setUv(glyph.u1 - uBloat, glyph.v2 + vBloat)
+                        .setLight(packedLight);
+                builder.addVertex(matrix, rx + boldOffset + w + sBloat, ry + h + sBloat, 0)
+                        .setColor(r, g, b, a)
+                        .setUv(glyph.u2 + uBloat, glyph.v2 + vBloat)
+                        .setLight(packedLight);
+                builder.addVertex(matrix, rx + boldOffset + w + sBloat, ry - sBloat, 0)
+                        .setColor(r, g, b, a)
+                        .setUv(glyph.u2 + uBloat, glyph.v1 - vBloat)
+                        .setLight(packedLight);
+            }
         }
     }
 

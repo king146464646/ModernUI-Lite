@@ -202,6 +202,8 @@ public class TextLayoutProcessor {
      * The total advance (horizontal width) of the processing text
      */
     private float mTotalAdvance;
+    private float mBoldShift;
+    private int mResLevel;
 
     private final FontPaint mFontPaint = new FontPaint();
 
@@ -422,6 +424,7 @@ public class TextLayoutProcessor {
         mGlyphFlags.clear();
         mLineBoundaries.clear();
         mTotalAdvance = 0;
+        mBoldShift = 0;
         mHasEffect = false;
         //mHasFastDigit = false;
         mHasColorEmoji = false;
@@ -564,6 +567,7 @@ public class TextLayoutProcessor {
 
             mComputeAdvances = (computeFlags & TextLayoutEngine.COMPUTE_ADVANCES) != 0;
             mComputeLineBoundaries = (computeFlags & TextLayoutEngine.COMPUTE_LINE_BOUNDARIES) != 0;
+            mResLevel = resLevel;
 
             int fontSize = computeFontSize(resLevel);
             mFontPaint.setFontSize(fontSize);
@@ -865,6 +869,8 @@ public class TextLayoutProcessor {
                 mTotalAdvance, null, mBuildLayout
         );
 
+        int fakeBoldCount = 0;
+        float shift = mBoldShift;
         for (int glyphIndex = glyphStart,
              glyphEnd = mGlyphs.size();
              glyphIndex < glyphEnd;
@@ -881,8 +887,27 @@ public class TextLayoutProcessor {
                 mHasColorEmoji = true;
             }
             mGlyphFlags.add(glyphFlags);
-        }
 
+            mPositions.elements()[glyphIndex << 1] += shift;
+            if ((styleFlags & CharacterStyle.BOLD_MASK) != 0 &&
+                    (font.getStyle() & FontPaint.BOLD) == 0) {
+                shift += 0.5f * mResLevel;
+                fakeBoldCount++;
+            }
+        }
+        mBoldShift = shift;
+
+        if (fakeBoldCount > 0) {
+            if (mComputeAdvances) {
+                float[] elements = mAdvances.elements();
+                for (int i = start, added = 0;
+                     i < limit && added < fakeBoldCount;
+                     i++, added++) {
+                    elements[i] += 0.5f * mResLevel;
+                }
+            }
+            advance += fakeBoldCount * 0.5f * mResLevel;
+        }
         mTotalAdvance += advance;
         /*} else {
             final var items = mFontPaint.getFont()

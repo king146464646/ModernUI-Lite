@@ -26,6 +26,7 @@
 * Add mouse preview tooltip for disabled options
 * Add Resource Pack Font and emoji options
 * Support for TTF provider properties
+* Support bold text
 
 ### This project fixed:
 * Fix some bugs in the original version
