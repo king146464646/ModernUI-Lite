@@ -715,13 +715,19 @@ public class TextLayoutEngine extends FontResourceManager
         var filters = mFamilyFilters;
         var options = currentFontOptions();
         var result = new ArrayList<FontFamily>(list.size());
+        var unicodeFonts = new ArrayList<FontFamily>();
         for (var family : list) {
             if (isFamilyEnabled(family, filters, options) &&
                     !isResourcePackFontExcluded(family) &&
                     !isResourcePackEmojiExcluded(family)) {
-                result.add(family);
+                if (family.getClosestMatch(FontPaint.NORMAL) instanceof UnifontFont) {
+                    unicodeFonts.add(family);
+                } else {
+                    result.add(family);
+                }
             }
         }
+        result.addAll(unicodeFonts);
         return result.toArray(new FontFamily[0]);
     }
 
