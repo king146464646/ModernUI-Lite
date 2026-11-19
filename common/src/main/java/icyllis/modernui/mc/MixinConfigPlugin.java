@@ -55,7 +55,8 @@ public class MixinConfigPlugin implements IMixinConfigPlugin {
         }*/
         if (mDisableSmoothScrolling) {
             if (mixinClassName.equals("icyllis.modernui.mc.mixin.MixinScrollPanel") ||
-                    mixinClassName.equals("icyllis.modernui.mc.mixin.MixinSelectionList")) {
+                    mixinClassName.equals("icyllis.modernui.mc.mixin.MixinSelectionList") ||
+                    mixinClassName.equals("icyllis.modernui.mc.mixin.MixinChatComponent")) {
                 return false;
             }
         }

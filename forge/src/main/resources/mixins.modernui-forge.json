@@ -8,6 +8,7 @@
   "client": [
     "AccessClientTextTooltip",
     "AccessNativeImage",
+    "MixinChatComponent",
     "MixinChatFormatting",
     "MixinChatScreen",
     "MixinClientTelemetryManager",
