@@ -27,6 +27,7 @@
 * Add Resource Pack Font and emoji options
 * Support for TTF provider properties
 * Support bold text
+* Add smooth scrolling for the chat interface
 
 ### This project fixed:
 * Fix some bugs in the original version
